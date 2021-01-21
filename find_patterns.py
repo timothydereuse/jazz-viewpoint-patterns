@@ -6,12 +6,12 @@ from fractions import Fraction
 
 fname = "Meshigene - transcription sax solo.musicxml"
 quarter_beat_multiplier = 12
-c = m21.converter.parse(fname)
+mus_xml = m21.converter.parse(fname)
 
 vps = {}
 # EXTRACT VIEWPOINTS
 
-notes = list(c.flat.notes)
+notes = list(mus_xml.flat.notes)
 pitches = [n.pitch.midi for n in notes]
 durs = [n.duration.quarterLength * quarter_beat_multiplier for n in notes]
 offsets = [n.offset * quarter_beat_multiplier for n in notes]
@@ -35,6 +35,18 @@ vps['dur_contour'] = dur_contour
 # dur_ratio = [durs[i+1] / durs[i] for i in range(len(durs) - 1)]
 # dur_ratio = np.round(np.log2(np.array(dur_ratio, dtype='float')))
 # vps['dur_ratio'] = np.append(dur_ratio, 0).astype('int')
+
+# down-beats
+# down_beats = (np.array(offsets) % (quarter_beat_multiplier * 4)) == 0
+# down_beats = [(x if x else np.nan) for x in down_beats]
+# vps['down_beats'] = down_beats
+
+# off-beats
+off_beats = (np.array(offsets) % (quarter_beat_multiplier * 4))
+off_beats = np.gcd(off_beats, 2**10)
+off_beats = [(1 if x == 2**10 else x) for x in off_beats]
+vps['beat_subdivision'] = off_beats
+
 
 # time till next note
 next_offset_time = np.append(np.diff(offsets), 10)
@@ -208,6 +220,7 @@ for iter in range(50000):
     cur_pat = max(equiv_pats, key=lambda x: x.interest())
     for cmp_pat in equiv_pats:
         active_pats.remove(cmp_pat)
+    discarded_pats += (len(equiv_pats) - 1)
     # active_pats.remove(first_pat)
     # cur_pat = first_pat
 
