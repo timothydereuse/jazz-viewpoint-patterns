@@ -3,10 +3,34 @@ import numpy as np
 from collections import Counter, defaultdict
 from copy import deepcopy
 from fractions import Fraction
+from pathlib import Path
+
+import visualize_motifs as vm
+from importlib import reload
+reload(vm)
+
+us = m21.environment.UserSettings()
+# us['musescoreDirectPNGPath'] = Path(r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe")
 
 fname = "Meshigene - transcription sax solo.musicxml"
 quarter_beat_multiplier = 12
 mus_xml = m21.converter.parse(fname)
+
+# mx_flat = mus_xml.flat
+x = list(mus_xml.recurse().getElementsByClass('PageLayout'))
+mus_xml.remove(x, recurse=True)
+# x = list(mus_xml.recurse().getElementsByClass('SystemLayout'))
+# mus_xml.remove(x, recurse=True)
+# x = list(mus_xml.recurse().getElementsByClass('StaffLayout'))
+# mus_xml.remove(x, recurse=True)
+
+# mus_xml.insert(0, m21.layout.PageLayout(leftMargin=234, rightMargin=124, pageHeight=12000, pageWidth=300, isNew=True))
+# x = list(mus_xml.recurse().getElementsByClass('Note'))
+# for n in x:
+#     if n.pitch.name == 'C':
+#         n.style.color = 'red'
+#
+# mus_xml.write('musicxml.pdf', fp='./exports/here2.pdf')
 
 vps = {}
 # EXTRACT VIEWPOINTS
@@ -29,6 +53,7 @@ vps['durs'] = durs
 
 # duration contour
 dur_contour = np.sign(np.append(np.diff(durs), 0))
+dur_contour = [(x if x != 0 else np.nan) for x in dur_contour]
 vps['dur_contour'] = dur_contour
 
 # duration ratio
@@ -120,12 +145,14 @@ class Pattern(object):
         s = ''
         for x in self.pat:
             s += str(x) + '\n'
-        num_occ = sum(self.instance_map)
-        s += f'occurrences: {num_occ}'
+        s += f'length: {len(self.pat)}'
+        locs = tuple(np.nonzero(self.instance_map))
+        num_occ = len(locs)
+        s += f'occurrences: {num_occ} at {locs}'
         return s
 
     def __repr__(self):
-        return f'Pattern of length {len(self.pat)} + {str(self.pat)}'
+        return f'Pattern of length {len(self.pat)}: {str(self.pat)}'
 
     def get_hashable_map(self):
         return tuple(np.nonzero(self.instance_map)[0])
@@ -200,11 +227,11 @@ finished_pats = defaultdict(lambda: None)
 visited_pattern_hashes = defaultdict(lambda: None)
 discarded_pats = 0
 
-num_variants = 5
+num_variants = 10
 min_freq = 8
-min_cardinality = 6
+min_cardinality = 4
 
-for iter in range(50000):
+for iter in range(1000000):
     try:
         first_pat = active_pats[0]
     except IndexError:
@@ -233,7 +260,7 @@ for iter in range(50000):
     elif not res:
         discarded_pats += 1
     else:
-        active_pats = res + active_pats
+        active_pats = active_pats + res
 
     # if pattern is not dead, test returned patterns to see if we've seen them already
     # for p in res:
@@ -244,12 +271,17 @@ for iter in range(50000):
     #     else:
     #         hash_collisions += 1
 
-
-
     if not iter % 1000:
         avg_len = np.mean([len(x) for x in active_pats])
         print(f'iter {iter} | active_pats {len(active_pats)} | avg_active_length {avg_len:2.3f} | finished_pats {len(finished_pats)}  discarded_pats {discarded_pats}')
 
-
 interest_pats = [(p, p.interest()) for p in finished_pats.values()]
 interest_pats = sorted(interest_pats, key=lambda x: -1 * x[1])
+
+for i in range(10):
+    p = interest_pats[i][0]
+    occs = len(np.nonzero(p.instance_map))
+    cardinality = len(p.pat) - 1
+    fname = f'./exports/meshigene_discovered_motif_{i} freq-{occs} card-{cardinality}'
+    viz_score = vm.vis_motif(, mus_xml)
+    score.write('musicxml.pdf', fp=fname)

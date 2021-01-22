@@ -1,0 +1,38 @@
+import music21 as m21
+import numpy as np
+from copy import deepcopy
+
+quarter_beat_multiplier = 12
+
+def vis_motif(pat, mus_xml):
+
+    score = deepcopy(mus_xml)
+
+    starts = np.nonzero(pat.instance_map)[0]
+    flat_notes = list(score.flat.notes)
+    pat.pat = [x for x in pat.pat if x]
+    cardinality = len(pat)
+
+    for i, st_ind in enumerate(starts):
+        flat_notes[st_ind].lyric = f'#{i}:'
+        for ind in np.arange(st_ind, st_ind + cardinality):
+            flat_notes[ind].style.color = 'red'
+
+    for i, ft in enumerate(pat.pat):
+
+        string_rep = []
+        for f in sorted(list(ft)):
+            key = f[0]
+            val = f[1]
+            if key in ['durs', 'rest_pad']:
+                val = np.round(val / quarter_beat_multiplier, 3)
+            string_rep.append(f'{key}: {val}')
+        string_rep = f'{i}: ' + ', '.join(string_rep)
+
+        tb = m21.text.TextBox(string_rep, 0, 1 - 8000 * i)
+        tb.style.fontSize = 9
+        tb.page = 1
+        # tb.style.justify = 'left'
+        score.append(tb)
+
+    return score
