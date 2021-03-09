@@ -22,18 +22,6 @@ x = list(mus_xml.recurse().getElementsByClass('PageLayout'))
 mus_xml.remove(x, recurse=True)
 
 mus_xml_copy = gv.collapse_tied_notes(mus_xml)
-# mus_xml_copy = deepcopy(mus_xml)
-# # consolidate ties into single notes
-# tied_notes = [x for x in mus_xml_copy.flat.notes if x.tie]
-# last_not_tied_ind = 0
-# for i, n in enumerate(tied_notes):
-#     if n.tie.type == 'start':
-#         n.tie = None
-#         last_not_tied_ind = i
-#     else:
-#         mus_xml_copy.remove(n, recurse=True)
-#         new_dur = m21.duration.Duration(tied_notes[last_not_tied_ind].duration.quarterLength + n.duration.quarterLength)
-#         tied_notes[last_not_tied_ind].duration = new_dur
 
 main_feat_seq = gv.get_viewpoints(mus_xml_copy)
 c = Counter([item for sublist in main_feat_seq for item in sublist])

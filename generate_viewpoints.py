@@ -1,6 +1,7 @@
 import music21 as m21
 import numpy as np
 from copy import deepcopy
+from collections import Counter
 
 quarter_beat_multiplier = 12
 
@@ -103,3 +104,39 @@ def get_viewpoints(mus_xml):
             main_feat_seq[i].add((k, val2))
 
     return main_feat_seq
+
+
+def viewpoint_seq_to_array(main_feat_seq, prob_exponent=1):
+    c = Counter([item for sublist in main_feat_seq for item in sublist])
+    all_viewpoint_keys = sorted(list(c.keys()))
+    key_to_index = { all_viewpoint_keys[i]: i for i in range(len(all_viewpoint_keys))}
+    num_events = len(main_feat_seq)
+
+    arr = np.zeros([num_events, len(all_viewpoint_keys)])
+    for i, vps in enumerate(main_feat_seq):
+        idxs = [key_to_index[vp] for vp in vps]
+        arr[i, idxs] = 1
+
+    feat_probs = {e: ((c[e] + 1) / num_events) ** (prob_exponent) for e in all_viewpoint_keys}
+    feat_probs_vector = [ 1 / feat_probs[k] for k in all_viewpoint_keys]
+
+    arr = arr * np.array(feat_probs_vector)
+
+    return arr, feat_probs
+
+if __name__ == '__main__':
+
+    fname = "Meshigene - transcription sax solo.musicxml"
+    mus_xml = m21.converter.parse(fname)
+    x = list(mus_xml.recurse().getElementsByClass('PageLayout'))
+    mus_xml.remove(x, recurse=True)
+
+    mus_xml_copy = collapse_tied_notes(mus_xml)
+
+    main_feat_seq = get_viewpoints(mus_xml_copy)
+
+    arr, feat_probs = viewpoint_seq_to_array(main_feat_seq, prob_exponent=0.5)
+
+    x = np.matmul(arr, arr.T)
+
+    x[np.identity(x.shape[0]) == 1] = 0
