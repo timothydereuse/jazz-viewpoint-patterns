@@ -20,6 +20,28 @@ def collapse_tied_notes(mus_xml):
             tied_notes[last_not_tied_ind].duration = new_dur
     return mus_xml_copy
 
+def collapse_rests(mus_xml, min_rest_len = 0.25):
+    mus_xml_copy = deepcopy(mus_xml)
+    # consolidate ties into single notes
+    notes = list(mus_xml_copy.flat.notesAndRests)
+    for i in range(len(notes) - 1):
+        this_event = notes[i]
+        next_event = notes[i + 1]
+
+        if not(this_event.isNote and next_event.isRest):
+            continue
+
+        if next_event.duration.quarterLength >= min_rest_len:
+            continue
+
+        new_dur = m21.duration.Duration(this_event.duration.quarterLength + next_event.duration.quarterLength)
+        this_event.duration = new_dur
+        mus_xml_copy.remove(next_event, recurse=True)
+
+    return mus_xml_copy
+
+
+
 def get_viewpoints(mus_xml):
     vps = {}
     # EXTRACT VIEWPOINTS
