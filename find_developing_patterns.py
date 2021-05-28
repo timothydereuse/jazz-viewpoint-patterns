@@ -15,15 +15,18 @@ reload(vm)
 reload(gv)
 reload(pattern)
 
+similarity_thresh_scale = 5.2
+cardinalities = [4, 5, 6]
+min_occurrences = 4
+num_paths_to_check = 200
+tune_name = 'meshigene'
+
+
 us = m21.environment.UserSettings()
 # us['musescoreDirectPNGPath'] = Path(r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe")
 
-fname = r'./Falling Grace solo.musicxml'
+fname = r'Meshigene - transcription sax solo.musicxml'
 mus_xml = m21.converter.parse(fname)
-# mus_xml = gv.collapse_rests(mus_xml)
-
-# mus_xml = mus_xml.makeNotation()
-
 x = list(mus_xml.recurse().getElementsByClass('PageLayout'))
 mus_xml.remove(x, recurse=True)
 
@@ -36,7 +39,7 @@ num_events = len(main_feat_seq)
 note_self_similarity = np.matmul(feats_arr, feats_arr.T)
 note_self_similarity[np.identity(num_events) == 1] = 0
 
-similarity_thresh = np.mean(note_self_similarity) * 6
+similarity_thresh = np.mean(note_self_similarity) * similarity_thresh_scale
 
 def get_subsequences(arr, m):
     n = arr.size - m + 1
@@ -77,7 +80,7 @@ def get_similarity(sequence_a, sequence_b, note_self_similarity):
 
 
 print('building graph...')
-sqs = [list(get_subsequences(np.arange(num_events), num_events - (i - 1))) for i in (5, 6, 7)]
+sqs = [list(get_subsequences(np.arange(num_events), num_events - (i - 1))) for i in cardinalities]
 sqs = [item for sublist in sqs for item in sublist]
 sqs = sorted(sqs, key=lambda x: tuple(x))
 
@@ -117,14 +120,41 @@ for x in all_paths.keys():
 
 x = sorted(duples.keys(), key=lambda x: duples[x])
 
+good_paths = []
+for i in range(num_paths_to_check):
+    p = g.shortest_path(x[i][0], x[i][1], memoize=True)
+
+    if len(p[1]) < min_occurrences:
+        continue
+
+    # check to make sure this isn't too similar to any other path
+    similar_paths = [
+        g for g in good_paths
+        if len(set(g[1]).intersection(set(p[1]))) > len(p[1]) * 0.5
+        ]
+    if not similar_paths:
+        good_paths.append(p)
+        continue
+
 print(f"exporting top motifs")
-for i in range(20):
-    path = g.shortest_path(x[i][0], x[i][1])
+for i, path in enumerate(good_paths):
     viz_seqs = [sqs[i] for i in path[1]]
     occs = len(viz_seqs)
     cardinality = len(viz_seqs[0])
-    fname = f'./exports/fallinggrace_discovered_motif_{i} freq-{occs} card-{cardinality}'
+    fname = f'./exports/{tune_name}_developing_motif-{i} freq-{occs} card-{cardinality}'
     viz_score = vm.vis_developing_motif(viz_seqs, mus_xml)
     viz_score.write('musicxml.pdf', fp=fname)
+
+    with open(f"{fname} description.txt", "a") as f:
+        f.write(f'Path score = {path[0]:.3f}\n')
+        for j, seq in enumerate(viz_seqs):
+            f.write(f'Occurrence {j}: notes {str(seq)}\n')
+            for k, idx in enumerate(seq):
+                vps = str(main_feat_seq[idx]).replace('\'', r'').replace('),', ')').replace(',', ':')
+                f.write(f'    Note {idx}: {vps} \n')
+
+
+
+
 
 # mus_xml.write('musicxml.pdf', fp='./exports/testexport')

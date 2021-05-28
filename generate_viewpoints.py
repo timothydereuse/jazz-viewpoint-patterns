@@ -53,7 +53,7 @@ def get_viewpoints(mus_xml):
     intervals = [m21.interval.Interval(notes[i], notes[i+1]) for i in range(len(notes) - 1)]
 
     # MIDI pitch
-    vps['pitches'] = pitches
+    # vps['pitches'] = pitches
 
     # pitch class
     pc_int = [n % 12 for n in pitches]
@@ -103,6 +103,15 @@ def get_viewpoints(mus_xml):
     # contour
     contour = np.sign(intervals_semitones)
     vps['contour'] = contour
+
+    # peaks and troughs
+    pt = [0] + pitches + [0]
+    peaks = [pt[i] > pt[i+1] and pt[i] > pt[i-1]
+        for i in range(1, len(pt) - 1)]
+    troughs = [pt[i] < pt[i+1] and pt[i] < pt[i-1]
+        for i in range(1, len(pt) - 1)]
+    pnt = [peaks[i] - troughs[i] for i in range(len(peaks))]
+    vps['melodic_peaks'] = pnt
 
     # non-stepwise motion
     skips = np.append(0, [x.isSkip for x in intervals])
