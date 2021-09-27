@@ -40,20 +40,20 @@ def collapse_rests(mus_xml, min_rest_len = 0.25):
 
     return mus_xml_copy
 
-
-
 def get_viewpoints(mus_xml):
     vps = {}
     # EXTRACT VIEWPOINTS
 
     notes = list(mus_xml.flat.notes)
-    pitches = [n.pitch.midi for n in notes]
+    notes = [n for n in notes if not type(n) is m21.harmony.ChordSymbol]
+    notes = [n if not n.isChord else n.notes[-1] for n in notes]
+    pitches = [n.pitch.midi if not n.isChord else n.pitches[-1].midi for n in notes]
     durs = [n.duration.quarterLength * quarter_beat_multiplier for n in notes]
     offsets = [n.offset * quarter_beat_multiplier for n in notes]
     intervals = [m21.interval.Interval(notes[i], notes[i+1]) for i in range(len(notes) - 1)]
 
     # MIDI pitch
-    # vps['pitches'] = pitches
+    vps['pitches'] = pitches
 
     # pitch class
     pc_int = [n % 12 for n in pitches]
@@ -64,7 +64,7 @@ def get_viewpoints(mus_xml):
 
     # duration contour
     dur_contour = np.sign(np.insert(np.diff(durs), 0, 0))
-    dur_contour = [(x if x != 0 else np.nan) for x in dur_contour]
+    # dur_contour = [(x if x != 0 else 0) for x in dur_contour]
     vps['dur_contour'] = dur_contour
 
     # duration ratio
@@ -74,7 +74,7 @@ def get_viewpoints(mus_xml):
 
     # down-beats
     down_beats = (np.array(offsets) % (quarter_beat_multiplier * 4)) == 0
-    down_beats = [(x if x else np.nan) for x in down_beats]
+    down_beats = [(x if x else 0) for x in down_beats]
     vps['down_beats'] = down_beats
 
     # off-beats
@@ -85,20 +85,21 @@ def get_viewpoints(mus_xml):
 
     # time till next note
     next_offset_time = np.append(np.diff(offsets), 10)
-    # vps['next_offset_time'] = next_offset_time
+    vps['next_offset_time'] = next_offset_time
 
     # time till next note minus duration
     rest_pad = next_offset_time - durs
-    rest_pad = [(x if x != 0.0 else np.nan) for x in rest_pad]
+    rest_pad = [(x if x != 0.0 else 0) for x in rest_pad]
     vps['rest_pad'] = rest_pad
 
     # interval from prev. note
+
     intervals_semitones = np.append(0, [x.semitones for x in intervals])
     vps['intervals_semitones'] = intervals_semitones
 
     # interval class
-    # interval_class = np.append(0, [x.intervalClass for x in intervals])
-    # vps['interval_class'] = interval_class
+    interval_class = np.append(0, [x.intervalClass for x in intervals])
+    vps['interval_class'] = interval_class
 
     # contour
     contour = np.sign(intervals_semitones)
@@ -115,26 +116,42 @@ def get_viewpoints(mus_xml):
 
     # non-stepwise motion
     skips = np.append(0, [x.isSkip for x in intervals])
-    skips = [(x if x != 0.0 else np.nan) for x in skips]
+    # skips = [(x if x != 0.0 else None) for x in skips]
     vps['skips'] = skips
 
     # diatonic interval size
-    diatonic_int_size = np.append(0, [int(x.name[-1]) for x in intervals])
-    vps['diatonic_int_size'] = diatonic_int_size
+    try:
+        diatonic_int_size = np.append(0, [int(x.name[-1]) for x in intervals])
+        vps['diatonic_int_size'] = diatonic_int_size
+    except IndexError:
+        ind = [x for x in range(len(intervals)) if intervals[x].name == '']
+        print(notes[ind[0]], notes[ind[1]])
+        raise
 
     # convert to list-of-sets
     main_feat_seq = np.array([set() for _ in range(len(notes))])
+    main_feat_dict = np.array([{} for _ in range(len(notes))])
     fkeys = sorted(list(vps.keys()))
     for k in fkeys:
         for i in range(len(notes)):
             val = vps[k][i]
             # filter out NaNs
-            if val != val:
-                continue
-            val2 = int(val)
-            main_feat_seq[i].add((k, val2))
+            if val is not None:
+                val = int(val)
 
-    return main_feat_seq
+            main_feat_seq[i].add((k, val))
+            main_feat_dict[i][k] = val
+
+    return main_feat_dict
+
+
+def viewpoint_seq_from_dict(main_feat_dict, key_list):
+    res = []
+    for i, e in enumerate(main_feat_dict):
+        vp = tuple([e[k] for k in key_list])
+        res.append(vp)
+    return res
+
 
 
 def viewpoint_seq_to_array(main_feat_seq, prob_exponent=1):
