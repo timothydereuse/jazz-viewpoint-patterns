@@ -64,7 +64,6 @@ def get_viewpoints(mus_xml):
 
     # duration contour
     dur_contour = np.sign(np.insert(np.diff(durs), 0, 0))
-    # dur_contour = [(x if x != 0 else 0) for x in dur_contour]
     vps['dur_contour'] = dur_contour
 
     # duration ratio
@@ -86,6 +85,11 @@ def get_viewpoints(mus_xml):
     # time till next note
     next_offset_time = np.append(np.diff(offsets), 10)
     vps['next_offset_time'] = next_offset_time
+
+    # time till next note
+    dur_thresh = quarter_beat_multiplier
+    long_dur = [(0 if x < dur_thresh else 1) for x in next_offset_time]
+    vps['long_dur'] = long_dur
 
     # time till next note minus duration
     rest_pad = next_offset_time - durs
@@ -118,6 +122,13 @@ def get_viewpoints(mus_xml):
     skips = np.append(0, [x.isSkip for x in intervals])
     # skips = [(x if x != 0.0 else None) for x in skips]
     vps['skips'] = skips
+
+    rough_contour = [skips[i] + contour[i] for i in range(len(contour))]
+    vps['rough_contour'] = skips
+
+    sharp_peaks = [(skips[i] or skips[i + 1]) and pnt[i] for i in range(len(skips) - 1)]
+    sharp_peaks.append(0)
+    vps['sharp_melodic_peaks'] = sharp_peaks
 
     # diatonic interval size
     try:
