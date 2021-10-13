@@ -1,5 +1,6 @@
 import music21 as m21
 import numpy as np
+import os
 from collections import Counter, defaultdict
 from copy import deepcopy
 from fractions import Fraction
@@ -23,18 +24,23 @@ reload(pattern)
 
 cardinalities = [5, 6, 7]
 max_length_difference = 2
-min_occurrences = 4
-score_prop_thresh = 0.05
+min_occurrences = 3
+score_prop_thresh = 0.005
 seq_compare_dist_threshold = 200
-log_lh_cutoff = 3.0
-tune_name = 'home_cookin_2'
-keys = ['rough_contour', 'long_dur', 'durs']
+log_lh_cutoff = 1.7
+top_motifs = 15
+tune_name = 'Donna Lee V'
+keys = ['durs', 'rough_contour']
 match_weights = [0, -6]
 gap_penalties = [-5, -5, -4, -4]
 
 xml_root = r'.\parker_transcriptions'
 fname = 'parker_transcriptions\\1947 02 01 Home Cookin\' 2 YouTube.mxl'
 # fname = r'parker_transcriptions\1947 03 09 Ornithology III.mxl'
+# fname = r'parker_transcriptions\1946 01 28 I Can t Get Started.mxl'
+# fname = r'parker_transcriptions\Meshigene - transcription sax solo.musicxml'
+# fname = r'parker_transcriptions\Falling Grace solo.musicxml'
+fname = r'parker_transcriptions\1947 05 08 Donna Lee V.mxl'
 
 us = m21.environment.UserSettings()
 # us['musescoreDirectPNGPath'] = Path(r"C:\Program Files\MuseScore 3\bin\MuseScore3.exe")
@@ -62,8 +68,8 @@ def get_similarity(sequence_a, sequence_b, vp_seq):
 
     vp_size = len(vp_seq[0])
 
-    a = [vp_seq[x] for x in sequence_a]
-    b = [vp_seq[x] for x in sequence_b]
+    a = [np.array(vp_seq[x]) for x in sequence_a]
+    b = [np.array(vp_seq[x]) for x in sequence_b]
 
     score = nw.get_alignment_score(a, b, match_weights, gap_penalties)
     # score = -1 * (score * 2 / (len(a) + len(b)))
@@ -142,19 +148,25 @@ def calculate_coverage(dist_matrix, sqs, thresh, min_occurrences=min_occurrences
         disqualified[inds_to_disqualify] = 1
         coverage[disqualified == 1] = 0
 
-        if max(coverage) < (min(cardinalities) * min_occurrences):
+        # finish if the highest-coverage entry left has particularly low coverage
+        if max(coverage) < (np.mean(cardinalities) * min_occurrences):
             break
     
     return motif_inds
 
 print('selecting motifs that have high-coverage neighborhoods...')
 sort_scores = sorted(scores)
-scores_to_test = np.linspace(score_prop_thresh / 20, score_prop_thresh, 20)
-threshes = [sort_scores[int(len(sort_scores) * x)] for x in scores_to_test]
-threshes = sorted(list(set(threshes)))
-all_motif_inds = [(x, calculate_coverage(dist_matrix, sqs, x)) for x in threshes]
-all_motif_inds_probs = [np.mean(sqs_probs[np.array(x[1])]) for x in all_motif_inds]
-thresh, motif_inds = all_motif_inds[np.argmax(all_motif_inds_probs)]
+thresh = sort_scores[int(len(sort_scores) * score_prop_thresh)]
+thresh = max(thresh, min([x for x in sort_scores if x > 0]))
+motif_inds = calculate_coverage(dist_matrix, sqs, thresh)
+# scores_to_test = np.linspace(score_prop_thresh / 10, score_prop_thresh, 20)
+# threshes = [sort_scores[int(len(sort_scores) * x)] for x in scores_to_test]
+# threshes = [x for x in threshes if x > 0]
+# threshes = sorted(list(set(threshes)))
+# all_motif_inds = [(x, calculate_coverage(dist_matrix, sqs, x)) for x in threshes]
+# all_motif_inds_probs = [np.mean(sqs_psrobs[np.array(x[1])]) for x in all_motif_inds]
+# all_motif_inds_probs = [len(x[1]) for x in all_motif_inds]
+# thresh, motif_inds = all_motif_inds[np.argmax(all_motif_inds_probs)]
 
 # mark all sequences within thresh distance of discovered motifs
 print('marking and filtering crowded neighborhoods...')
@@ -199,33 +211,38 @@ for c, ind in enumerate(motif_inds):
     vps = [vp_seq[x] for x in sqs[ind]]
     prob = mp.get_prob_of_sequence(vps, markov)
     sqs_inds_in_cluster = np.nonzero(motif_labels == c)[0]
-    motif_probs.append([prob, c, len(sqs_inds_in_cluster)])
 
-# motif_probs = sorted(motif_probs, key=lambda x: x[0])
-motifs_to_export = [x[1] for x in motif_probs if x[0] > log_lh_cutoff]
+    # remove anything that's dropped below requisite number of occurrences
+    if len(sqs_inds_in_cluster) >= min_occurrences:
+        motif_probs.append([prob, c, len(sqs_inds_in_cluster)])
+
+motif_probs = sorted(motif_probs, key=lambda x: x[0], reverse=True)
+# motifs_to_export = [x[1] for x in motif_probs if x[0] > log_lh_cutoff]
+motifs_to_export = [x[1] for x in motif_probs[:top_motifs]]
 
 num_clusters = max(motif_labels)
 
 print(f"exporting top motifs")
-for c in motifs_to_export:
+folder_name = f'./exports/{tune_name}, ' + '-'.join(keys)
+os.mkdir(folder_name)
+for i, c in enumerate(motifs_to_export):
 
     sqs_inds_in_cluster = np.nonzero(motif_labels == c)[0]
     viz_seqs = [list(sqs[i]) for i in sqs_inds_in_cluster]
-
-    print(sqs_inds_in_cluster)
     occs = len(viz_seqs)
     cardinality = len(viz_seqs[0])
-    fname = f'./exports/{tune_name}_developing_motif-{i} freq-{occs} card-{cardinality}'
+    fname = f'{folder_name}/{tune_name}_developing_motif-{c} freq-{occs} card-{cardinality}'
     viz_score = vm.vis_developing_motif(viz_seqs, mus_xml)
     viz_score.write('musicxml.pdf', fp=fname)
 
-    # with open(f"{fname} description.txt", "a") as f:
-    #     # f.write(f'Path score = {path[0]:.3f}\n')
-    #     for j, seq in enumerate(viz_seqs):
-    #         f.write(f'Occurrence {j}: notes {str(seq)}\n')
-    #         for k, idx in enumerate(seq):
-    #             vps = str(main_feat_seq[idx]).replace('\'', r'').replace('),', ')').replace(',', ':')
-    #             f.write(f'    Note {idx}: {vps} \n')
+    with open(f"{fname} description.txt", "a") as f:
+        f.write(f'Viewpoints: {str(keys)} \n')
+        f.write(f'Sequence score = {sqs_probs[motif_inds[c]]:.3f}\n')
+        for j, seq in enumerate(viz_seqs):
+            f.write(f'Occurrence {j}: notes {str(seq)}\n')
+            for k, idx in enumerate(seq):
+                vps = str(vp_seq[idx]).replace('\'', r'').replace('),', ')')
+                f.write(f'    {vps} \n')
 
 
 # # mus_xml.write('musicxml.pdf', fp='./exports/testexport')

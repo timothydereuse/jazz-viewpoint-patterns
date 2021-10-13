@@ -13,6 +13,7 @@ default_gap_penalties = [-7, -7, -3, 0]
 @njit
 def create_matrix(seq_a, seq_b, match_weights, gap_rules):
     gap_open_x, gap_open_y, gap_extend_x, gap_extend_y = gap_rules
+    vec_size = len(seq_a[0])
 
     # y_mat and x_mat keep track of gaps in horizontal and vertical directions
     len_a = len(seq_a)
@@ -39,11 +40,11 @@ def create_matrix(seq_a, seq_b, match_weights, gap_rules):
         for j in range(1, len_b):
 
             # if np.all(seq_a[i-1] == seq_b[j-1]):
-            if seq_a[i - 1] == seq_b[j - 1]:
+            if np.all(1 * (seq_a[i - 1] == seq_b[j - 1])):
                 match_score = match_weights[0]
             else:
-                # match_score = np.sum(seq_a[i-1] != seq_b[j-1]) * match_weights[1]
-                match_score = match_weights[1]
+                match_score = np.sum(1 - (seq_a[i-1] == seq_b[j-1])) * (match_weights[1] / vec_size)
+                # match_score = match_weights[1]
 
             mat_vals = np.array([mat[i-1][j-1], x_mat[i-1][j-1], y_mat[i-1][j-1]])
             mat[i][j] = np.max(mat_vals) + match_score
@@ -222,13 +223,13 @@ def perform_alignment(transcript, ocr, match_weights=None, gap_penalties=None, i
 
 if __name__ == '__main__':
 
-    seq1 = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit '
-    seq2 = 'LoLO LOrem ipsum fipsudolor ..... sit eamet, c.nnr adizisdcing eelitellit'
+    seq1 = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit performperformperformperform'
+    seq2 = 'LoLO LOrem ipsum fipsudolor ..... sit eamet, c.nnr adizisdcing eelitellit performperformperformperform'
     match_weights = [3, -2]
     gap_penalties = [-1, -1, -1, -1]
 
-    seq1 = [(ord(seq1[2*x]), ord(seq1[2*x + 1])) for x in range(len(seq1) // 2)]
-    seq2 = [(ord(seq2[2*x]), ord(seq2[2*x + 1])) for x in range(len(seq2) // 2)]
+    seq1 = [np.array([ord(seq1[2*x]), ord(seq1[2*x + 1])]) for x in range(len(seq1) // 2)]
+    seq2 = [np.array([ord(seq2[2*x]), ord(seq2[2*x + 1])]) for x in range(len(seq2) // 2)]
 
     # seq1 = list([ord(x) for x in seq1])
     # seq2 = list([ord(x) for x in seq2])

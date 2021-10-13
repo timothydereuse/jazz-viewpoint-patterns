@@ -13,7 +13,7 @@ def counter_to_prob(c):
 
 def make_markov_prob_dicts(xml_root, keys):
 
-    all_fnames = [x for x in os.listdir(xml_root) if '.mxl' in x] 
+    all_fnames = [x for x in os.listdir(xml_root) if '.mxl' in x or '.musicxml' in x] 
     all_viewpoints = {}
 
     for i, fname in enumerate(all_fnames):

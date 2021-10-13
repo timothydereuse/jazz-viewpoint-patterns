@@ -57,7 +57,7 @@ def get_viewpoints(mus_xml):
 
     # pitch class
     pc_int = [n % 12 for n in pitches]
-    vps['pc_int'] = pc_int
+    vps['pitch_class'] = pc_int
 
     # duration
     vps['durs'] = durs
@@ -89,7 +89,7 @@ def get_viewpoints(mus_xml):
     # time till next note
     dur_thresh = quarter_beat_multiplier
     long_dur = [(0 if x < dur_thresh else 1) for x in next_offset_time]
-    vps['long_dur'] = long_dur
+    vps['long_durs'] = long_dur
 
     # time till next note minus duration
     rest_pad = next_offset_time - durs
@@ -124,7 +124,7 @@ def get_viewpoints(mus_xml):
     vps['skips'] = skips
 
     rough_contour = [skips[i] + contour[i] for i in range(len(contour))]
-    vps['rough_contour'] = skips
+    vps['rough_contour'] = rough_contour
 
     sharp_peaks = [(skips[i] or skips[i + 1]) and pnt[i] for i in range(len(skips) - 1)]
     sharp_peaks.append(0)
