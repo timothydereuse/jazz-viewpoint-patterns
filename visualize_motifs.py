@@ -46,6 +46,7 @@ def vis_developing_motif(seqs, mus_xml):
 
     flat_notes = list(score.flat.notes)
     flat_notes = [x for x in flat_notes if (not x.tie) or (x.tie.type == 'start')]
+    flat_notes = [n for n in flat_notes if not type(n) is m21.harmony.ChordSymbol]
 
     for i, seq in enumerate(seqs):
         flat_notes[seq[0]].lyric = f'#{i}:'
