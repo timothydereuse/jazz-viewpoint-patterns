@@ -86,10 +86,15 @@ def get_viewpoints(mus_xml):
     next_offset_time = np.append(np.diff(offsets), 10)
     vps['next_offset_time'] = next_offset_time
 
-    # time till next note
-    dur_thresh = quarter_beat_multiplier
-    long_dur = [(0 if x < dur_thresh else 1) for x in next_offset_time]
+    # notes greater than median duration
+    dur_thresh = np.median(next_offset_time)
+    long_dur = [(0 if x <= dur_thresh else 1) for x in next_offset_time]
     vps['long_durs'] = long_dur
+
+    # pitches greater than median pitch
+    pitch_thresh = np.median(pitches)
+    hi_pitch = [(0 if x <= pitch_thresh else 1) for x in pitches]
+    vps['high_pitches'] = hi_pitch
 
     # time till next note minus duration
     rest_pad = next_offset_time - durs
@@ -119,8 +124,7 @@ def get_viewpoints(mus_xml):
     vps['melodic_peaks'] = pnt
 
     # non-stepwise motion
-    skips = np.append(0, [x.isSkip for x in intervals])
-    # skips = [(x if x != 0.0 else None) for x in skips]
+    skips = np.append(0, [x.isSkip * np.sign(x.semitones) for x in intervals])
     vps['skips'] = skips
 
     rough_contour = [skips[i] + contour[i] for i in range(len(contour))]
