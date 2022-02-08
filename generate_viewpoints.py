@@ -1,9 +1,23 @@
+from argparse import ArgumentError
 import music21 as m21
 import numpy as np
 from copy import deepcopy
 from collections import Counter
+from numpy.lib.stride_tricks import as_strided
+from pip import main
 
 quarter_beat_multiplier = 12
+
+def get_subsequences(arr, m):
+    n = arr.size - m + 1
+    s = arr.itemsize
+    return as_strided(arr, shape=(m,n), strides=(s,s))
+
+def get_all_subsequences(num_events, cardinalities):
+    sqs = [list(get_subsequences(np.arange(num_events), num_events - (i - 1))) for i in cardinalities]
+    sqs = [item for sublist in sqs for item in sublist]
+    sqs = sorted(sqs, key=lambda x: tuple(x))
+    return sqs
 
 def collapse_tied_notes(mus_xml):
     mus_xml_copy = deepcopy(mus_xml)
@@ -39,6 +53,13 @@ def collapse_rests(mus_xml, min_rest_len = 0.25):
         mus_xml_copy.remove(next_event, recurse=True)
 
     return mus_xml_copy
+
+
+def clean_mus_xml(score):
+    flat_notes = list(score.flat.notes)
+    flat_notes = [x for x in flat_notes if (not x.tie) or (x.tie.type == 'start')]
+    flat_notes = [n for n in flat_notes if not type(n) is m21.harmony.ChordSymbol]
+    return flat_notes
 
 def get_viewpoints(mus_xml):
     vps = {}
@@ -102,7 +123,6 @@ def get_viewpoints(mus_xml):
     vps['rest_pad'] = rest_pad
 
     # interval from prev. note
-
     intervals_semitones = np.append(0, [x.semitones for x in intervals])
     vps['intervals_semitones'] = intervals_semitones
 
@@ -168,7 +188,6 @@ def viewpoint_seq_from_dict(main_feat_dict, key_list):
     return res
 
 
-
 def viewpoint_seq_to_array(main_feat_seq, prob_exponent=1):
     c = Counter([item for sublist in main_feat_seq for item in sublist])
     all_viewpoint_keys = sorted(list(c.keys()))
@@ -187,19 +206,53 @@ def viewpoint_seq_to_array(main_feat_seq, prob_exponent=1):
 
     return arr, feat_probs
 
+
+
+def get_timescaled_signal(main_feat_seq, sqs, target_length=120):
+
+    vps = viewpoint_seq_from_dict(main_feat_seq, ['durs', 'pitches'])
+
+    skeleton = np.array(vps)
+
+    stretched_arrays = np.zeros([len(sqs), target_length, 2])
+
+    for n, seq in enumerate(sqs):
+        skel_elements = skeleton[seq]
+        intervals = np.concatenate([[1], np.diff(skel_elements[:, 1])])
+        cum_sums = np.concatenate([[0], np.cumsum(skel_elements[:, 0])])
+        scale_up = target_length / np.sum(skel_elements[:, 0])
+        scaled_cum_sums = np.round(cum_sums * scale_up).astype(int)
+        out_arr = np.zeros((target_length, 2))
+        for i in range(len(scaled_cum_sums) - 1):
+            start, end = scaled_cum_sums[i], scaled_cum_sums[i+1]
+            out_arr[start:end, 0] = np.linspace(3, 0, end - start) ** 2
+            out_arr[start:end, 1] = intervals[i]
+        stretched_arrays[n] = out_arr
+
+    return stretched_arrays
+
 if __name__ == '__main__':
+
+
+    cardinalities = [5, 6, 7]
+
 
     fname = "Meshigene - transcription sax solo.musicxml"
     mus_xml = m21.converter.parse(fname)
     x = list(mus_xml.recurse().getElementsByClass('PageLayout'))
     mus_xml.remove(x, recurse=True)
-
     mus_xml_copy = collapse_tied_notes(mus_xml)
-
     main_feat_seq = get_viewpoints(mus_xml_copy)
 
-    arr, feat_probs = viewpoint_seq_to_array(main_feat_seq, prob_exponent=0.5)
+    num_events = len(main_feat_seq)
+    sqs = get_all_subsequences(num_events, cardinalities)
+    timescaled = get_timescaled_signal(main_feat_seq, sqs, target_length=100)
 
-    x = np.matmul(arr, arr.T)
 
-    x[np.identity(x.shape[0]) == 1] = 0
+    # arr, feat_probs = viewpoint_seq_to_array(main_feat_seq, prob_exponent=0.5)
+
+    # entry = timescaled[423]
+    # plt.clf()
+    # plt.plot(entry[:, 0])
+    # plt.plot(entry[:, 1])
+    # plt.show()

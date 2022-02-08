@@ -1,4 +1,5 @@
 exports/*
+parker_transcriptions/*
 *.zip
 
 # Byte-compiled / optimized / DLL files
@@ -130,3 +131,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+.vscode/settings.json
