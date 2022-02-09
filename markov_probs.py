@@ -50,20 +50,24 @@ def make_markov_prob_dicts(xml_root, keys):
 def get_prob_of_sequence(sq, markov_dict):
     cumulative_0_prob = 1
     cumulative_1_prob = 1
+    cumulative_prob = 1
     for i in range(len(sq)):
         cur = sq[i]
         zeroth_order_prob = markov_dict['raw'][cur]
         if i > 0:
             prev = sq[i - 1]
-            first_order_prob = markov_dict[prev][cur]
+            # first_order_prob = markov_dict[prev][cur]
+            prob = markov_dict[prev][cur]
         else:
-            first_order_prob = 1
+            prob = zeroth_order_prob = markov_dict['raw'][cur]
 
-        cumulative_0_prob *= zeroth_order_prob
-        cumulative_1_prob *= first_order_prob
+        # cumulative_0_prob *= zeroth_order_prob
+        # cumulative_1_prob *= first_order_prob
+        cumulative_prob *= prob
 
-    total_prob = (np.log(cumulative_0_prob) + np.log(cumulative_1_prob)) * -1
-    total_prob /= len(sq)
+    # total_prob = (np.log(cumulative_0_prob) + np.log(cumulative_1_prob)) * -1
+    total_prob = np.log(cumulative_prob) * -1
+    # total_prob /= len(sq)
 
     return total_prob 
 
