@@ -19,6 +19,44 @@ def get_all_subsequences(num_events, cardinalities):
     sqs = sorted(sqs, key=lambda x: tuple(x))
     return sqs
 
+def filter_subsequences(main_feat_seq, sqs):
+
+    # subsequences must:
+    # - not contain a rest of a quarter note or longer
+    # - Must not contain a note of half-note duration or longer unless it's the last one
+    # - not start or end on a weak note (of eighth duration or less AND onset on a weak beat)
+
+    flag_remove = np.zeros(len(sqs))
+
+    for sq_index, sq in enumerate(sqs):
+        sq_feats = [main_feat_seq[i] for i in sq]
+        preceding_note = main_feat_seq[sq[0] - 1]
+
+        # check for presence of long rests
+        if any(x['rest_pad'] > quarter_beat_multiplier for x in sq_feats[:-1]):
+            flag_remove[sq_index] = 1
+            continue
+
+        # check for presence of long notes
+        if any(x['next_offset_time'] > 2 * quarter_beat_multiplier for x in sq_feats[:-1]):
+            flag_remove[sq_index] = 1
+            continue
+
+        first_weak = (sq_feats[0]['beat_subdivision'] < 4) and (preceding_note['next_offset_time'] < quarter_beat_multiplier)
+        last_weak = (sq_feats[-1]['beat_subdivision'] < 4) and (sq_feats[-1]['next_offset_time'] < quarter_beat_multiplier)
+        if (first_weak and last_weak):
+            flag_remove[sq_index] = 1
+            continue
+
+        if (all(x['next_offset_time'] == sq_feats[0]['next_offset_time'] for x in sq_feats) and
+            all(x['contour'] == sq_feats[0]['contour'] for x in sq_feats)):
+            flag_remove[sq_index] = 1
+            continue
+    
+    good_sq_inds = (flag_remove == 0).nonzero()[0]
+    filtered_sqs = [sqs[i] for i in good_sq_inds]
+    return filtered_sqs
+
 def collapse_tied_notes(mus_xml):
     mus_xml_copy = deepcopy(mus_xml)
     # consolidate ties into single notes
@@ -59,6 +97,7 @@ def clean_mus_xml(score):
     flat_notes = list(score.flat.notes)
     flat_notes = [x for x in flat_notes if (not x.tie) or (x.tie.type == 'start')]
     flat_notes = [n for n in flat_notes if not type(n) is m21.harmony.ChordSymbol]
+    flat_notes = [n if not n.isChord else n.notes[-1] for n in flat_notes]
     return flat_notes
 
 def get_viewpoints(mus_xml):
@@ -98,10 +137,10 @@ def get_viewpoints(mus_xml):
     vps['down_beats'] = down_beats
 
     # off-beats
-    # off_beats = (np.array(offsets) % (quarter_beat_multiplier * 4))
-    # off_beats = np.gcd(off_beats, 2**10)
-    # off_beats = [(1 if x == 2**10 else x) for x in off_beats]
-    # vps['beat_subdivision'] = off_beats
+    off_beats = (np.array(offsets) % (quarter_beat_multiplier * 4))
+    off_beats = np.gcd(off_beats, 2**10)
+    off_beats = [(1 if x == 2**10 else x) for x in off_beats]
+    vps['beat_subdivision'] = off_beats
 
     # time till next note
     next_offset_time = np.append(np.diff(offsets), 10)
@@ -214,20 +253,32 @@ def get_timescaled_signal(main_feat_seq, sqs, target_length=120):
 
     skeleton = np.array(vps)
 
-    stretched_arrays = np.zeros([len(sqs), target_length, 2])
+    stretched_arrays = []
 
     for n, seq in enumerate(sqs):
         skel_elements = skeleton[seq]
+
+        pitches = skel_elements[:, 1]
         intervals = np.concatenate([[1], np.diff(skel_elements[:, 1])])
+        pitch_content = pitches % 24
+
         cum_sums = np.concatenate([[0], np.cumsum(skel_elements[:, 0])])
         scale_up = target_length / np.sum(skel_elements[:, 0])
         scaled_cum_sums = np.round(cum_sums * scale_up).astype(int)
-        out_arr = np.zeros((target_length, 2))
+        out_arr = np.zeros((target_length, 24 + 1))
         for i in range(len(scaled_cum_sums) - 1):
             start, end = scaled_cum_sums[i], scaled_cum_sums[i+1]
-            out_arr[start:end, 0] = np.linspace(3, 0, end - start) ** 2
-            out_arr[start:end, 1] = intervals[i]
-        stretched_arrays[n] = out_arr
+            halfblock = np.round(np.linspace(1, 0, end - start)).astype(int)
+            out_arr[start:end, -1] = halfblock
+            out_arr[start:end, pitch_content[i]] = halfblock
+        
+        # randomly perturb a single element to add noise and de-duplicate
+        x, y = np.random.randint(out_arr.shape[0]), np.random.randint(out_arr.shape[1])
+        
+
+        stretched_arrays.append(out_arr)
+
+    stretched_arrays = np.stack(stretched_arrays, 0)
 
     return stretched_arrays
 

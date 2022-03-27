@@ -22,11 +22,6 @@ reload(mp)
 reload(nw)
 reload(pattern)
 
-def get_subsequences(arr, m):
-    n = arr.size - m + 1
-    s = arr.itemsize
-    return as_strided(arr, shape=(m,n), strides=(s,s))
-
 
 def get_similarity(sequence_a, sequence_b, vp_seq):
     vp_size = len(vp_seq[0])
@@ -109,24 +104,25 @@ def filter_neighborhoods(motif_inds, thresh, dist_matrix, sqs):
 if __name__ == '__main__':
 
     cardinalities = [5, 6, 7]
-    max_length_difference = 2
+    max_length_difference = 5
     min_occurrences = 4
     score_prop_thresh = 0.006
     seq_compare_dist_threshold = 300
     log_lh_cutoff = 1.7
     top_motifs = 15
-    keys = ['durs', 'contour', 'pitches', 'sharp_melodic_peaks', 'skips']
+    keys = ['durs', 'contour', 'pitches', 'sharp_melodic_peaks']
     match_weights = [0, -6]
     gap_penalties = [-5, -5, -4, -4]
 
     xml_root = r'.\parker_transcriptions'
     fnames = [
-        'parker_transcriptions\\1947 02 01 Home Cookin\' 2 YouTube.mxl',
-        r'parker_transcriptions\1947 03 09 Ornithology III.mxl',
-        r'parker_transcriptions\1946 01 28 I Can t Get Started.mxl',
-        r'parker_transcriptions\Meshigene - transcription sax solo.musicxml',
-        r'parker_transcriptions\Falling Grace solo.musicxml',
-        r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
+        r'Konitz\Konitz - Lennie-Bird.musicxml',
+        # 'parker_transcriptions\\1947 02 01 Home Cookin\' 2 YouTube.mxl',
+        # r'parker_transcriptions\1947 03 09 Ornithology III.mxl',
+        # r'parker_transcriptions\1946 01 28 I Can t Get Started.mxl',
+        # r'parker_transcriptions\Meshigene - transcription sax solo.musicxml',
+        # r'parker_transcriptions\Falling Grace solo.musicxml',
+        # r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
         ]
 
     us = m21.environment.UserSettings()
@@ -147,19 +143,17 @@ if __name__ == '__main__':
 
         feat_dict = gv.get_viewpoints(mus_xml_copy)
         vp_seq = gv.viewpoint_seq_from_dict(feat_dict, keys)
-        # vp_seq = vp_seq[:50]
         num_events = len(vp_seq)
 
-        sqs = [list(get_subsequences(np.arange(num_events), num_events - (i - 1))) for i in cardinalities]
-        sqs = [item for sublist in sqs for item in sublist]
-        sqs = sorted(sqs, key=lambda x: tuple(x))
+        sqs_unfiltered = gv.get_all_subsequences(num_events, cardinalities)
+        sqs = gv.filter_subsequences(feat_dict, sqs_unfiltered)
 
         # calculating negative log likelihood of all subsequences...
-        sqs_probs = np.zeros(len(sqs))
-        for i, sq in enumerate(sqs):
-            vps = [vp_seq[x] for x in sq]
-            prob = mp.get_prob_of_sequence(vps, markov)
-            sqs_probs[i] = prob
+        # sqs_probs = np.zeros(len(sqs))
+        # for i, sq in enumerate(sqs):
+        #     vps = [vp_seq[x] for x in sq]
+        #     prob = mp.get_prob_of_sequence(vps, markov)
+        #     sqs_probs[i] = prob
 
         # make list of pairs of sequences that will be compared.
         print('getting list of candidate pairs of sequences...')
@@ -167,8 +161,8 @@ if __name__ == '__main__':
         for i, sqa in enumerate(sqs):
             for j, sqb in enumerate(sqs[i:]):
                 # do not evaluate overlapping sequences
-                # if not (set(sqa).intersection(set(sqb)) == set()):
-                #     continue
+                if not (set(sqa).intersection(set(sqb)) == set()):
+                    continue
                 # do not evaluate sequences whose lengths are too different
                 if np.abs(len(sqa) - len(sqb)) > max_length_difference:
                     continue
