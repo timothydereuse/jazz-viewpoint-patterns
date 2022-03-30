@@ -11,9 +11,12 @@ default_match_weights = [8, -5]
 default_gap_penalties = [-7, -7, -3, 0]
 
 @njit
-def create_matrix(seq_a, seq_b, match_weights, gap_rules):
+def create_matrix(seq_a, seq_b, match_weights, gap_rules, partial_matches=True):
     gap_open_x, gap_open_y, gap_extend_x, gap_extend_y = gap_rules
     vec_size = len(seq_a[0])
+
+    gap_open_x *= vec_size
+    gap_open_y *= vec_size
 
     # y_mat and x_mat keep track of gaps in horizontal and vertical directions
     len_a = len(seq_a)
@@ -41,10 +44,11 @@ def create_matrix(seq_a, seq_b, match_weights, gap_rules):
 
             # if np.all(seq_a[i-1] == seq_b[j-1]):
             if np.all(1 * (seq_a[i - 1] == seq_b[j - 1])):
-                match_score = match_weights[0]
+                match_score = match_weights[0] * vec_size
+            elif partial_matches:
+                match_score = np.sum(1 - (seq_a[i-1] == seq_b[j-1])) * (match_weights[1])
             else:
-                match_score = np.sum(1 - (seq_a[i-1] == seq_b[j-1])) * (match_weights[1] / vec_size)
-                # match_score = match_weights[1]
+                match_score = match_weights[1] * vec_size
 
             mat_vals = np.array([mat[i-1][j-1], x_mat[i-1][j-1], y_mat[i-1][j-1]])
             mat[i][j] = np.max(mat_vals) + match_score
@@ -73,7 +77,7 @@ def create_matrix(seq_a, seq_b, match_weights, gap_rules):
 
     return mat_ptr, x_mat_ptr, y_mat_ptr, mat[-1][-1]
 
-def get_alignment_score(transcript, ocr, match_weights=None, gap_penalties=None):
+def get_alignment_score(transcript, ocr, match_weights=None, gap_penalties=None, partial_matches=True):
     if gap_penalties is None:
         gap_open_x, gap_open_y, gap_extend_x, gap_extend_y = default_gap_penalties
     elif len(gap_penalties) == 4:
@@ -92,7 +96,7 @@ def get_alignment_score(transcript, ocr, match_weights=None, gap_penalties=None)
     ocr_numba = numbaList(ocr)
     match_weights = numbaList(match_weights)
     gap_penalties = numbaList(gap_penalties)
-    mat_ptr, x_mat_ptr, y_mat_ptr, total_score = create_matrix(transcript_numba, ocr_numba, match_weights, gap_penalties)
+    mat_ptr, x_mat_ptr, y_mat_ptr, total_score = create_matrix(transcript_numba, ocr_numba, match_weights, gap_penalties, partial_matches)
 
     return total_score
 

@@ -138,8 +138,8 @@ def get_viewpoints(mus_xml):
     vps['down_beats'] = down_beats
 
     # off-beats
-    off_beats = (np.array(offsets) % (quarter_beat_multiplier * 4))
-    off_beats = np.gcd(off_beats, 2**10)
+    off_beats = (np.array(offsets) % (quarter_beat_multiplier * 4)).astype(int)
+    off_beats = np.gcd(off_beats, int(2**10))
     off_beats = [(1 if x == 2**10 else x) for x in off_beats]
     vps['beat_subdivision'] = off_beats
 
@@ -290,7 +290,7 @@ if __name__ == '__main__':
 
     cardinalities = [5, 6, 7]
 
-    fname = "Meshigene - transcription sax solo.musicxml"
+    fname = "./parker_transcriptions/Meshigene - transcription sax solo.musicxml"
     mus_xml = m21.converter.parse(fname)
     x = list(mus_xml.recurse().getElementsByClass('PageLayout'))
     mus_xml.remove(x, recurse=True)

@@ -7,10 +7,8 @@ from fractions import Fraction
 from pathlib import Path
 from itertools import combinations
 import affine_needleman_wunsch as nw
-from sklearn.cluster import DBSCAN
 from joblib import Parallel, delayed
 from numpy.lib.stride_tricks import as_strided
-
 import visualize_motifs as vm
 import generate_viewpoints as gv
 import markov_probs as mp
@@ -22,21 +20,21 @@ reload(mp)
 reload(nw)
 reload(pattern)
 
-match_weights = [0, -3]
+m21.environment.set('musescoreDirectPNGPath', r'C://Program Files//MuseScore 3//bin//MuseScore3.exe')
+match_weights = [0, -2]
 gap_penalties = [-2, -2, -1, -1]
 
-def get_similarity(sequence_a, sequence_b, vp_seq):
+def get_similarity(sequence_a, sequence_b, vp_seq, partial_matches=True):
     vp_size = len(vp_seq[0])
     a = [np.array(vp_seq[x]) for x in sequence_a]
     b = [np.array(vp_seq[x]) for x in sequence_b]
-    score = nw.get_alignment_score(a, b, match_weights, gap_penalties)
-    # score = -1 * (score * 2 / (len(a) + len(b)))
-    score = -1 * score
+    score = nw.get_alignment_score(a, b, match_weights, gap_penalties, partial_matches)
+    score = -1 * (score * 2 / (len(a) + len(b)))
+    # score = -1 * score
     return score
 
 
 def calculate_coverage(dist_matrix, sqs, thresh, min_coverage):
-    # given a set of motifs
 
     disqualified = np.zeros(dist_matrix.shape[0])
     neighborhoods = (dist_matrix < thresh)
@@ -107,8 +105,8 @@ def filter_neighborhoods(motif_inds, thresh, dist_matrix, sqs):
 
 
 def process_mus_xml(fname, markov, cardinalities=None, keys=None, 
-    max_length_difference=2, min_occurrences=4, score_prop_thresh=0.01, 
-    markov_prob_thresh=0.6, seq_compare_dist_threshold=500):
+    max_length_difference=2, min_occurrences=4, score_prop_thresh=1.0, max_score=2, partial_matches=True,
+    markov_prob_thresh=0.6, seq_compare_dist_threshold=500, precomputed_pairs_output=None):
     
     tune_name = os.path.split(fname)[-1].split('.m')[0]
     print(f'now processing {tune_name}')
@@ -162,66 +160,97 @@ def process_mus_xml(fname, markov, cardinalities=None, keys=None,
 
     def compare_pair(sq_pair):
         n, i, j = sq_pair
-        similarity = get_similarity(sqs[i], sqs[j], vp_seq)
+        similarity = get_similarity(sqs[i], sqs[j], vp_seq, partial_matches)
         if not n % (num_pairs // 10):
             print(f'   {n} / {num_pairs} scores calculated...')
         return similarity
 
-    #     if not n % (len(pairs_to_compare) // 10):
-    #         print(f'   {n} / {len(pairs_to_compare)} scores calculated...')
-    # output = Parallel(n_jobs=3)(delayed(compare_pair)((i,) + n) for i, n in enumerate(pairs_to_compare))
+    if precomputed_pairs_output is None:
+        output = [compare_pair((i,) + n) for i, n in enumerate(pairs_to_compare)]
+    else:
+        print('using precomputed pair scores.')
+        output = precomputed_pairs_output
 
-    output = [compare_pair((i,) + n) for i, n in enumerate(pairs_to_compare)]
     for n, sq_pair in enumerate(pairs_to_compare):
         dist_matrix[sq_pair[0], sq_pair[1]] = output[n]
         dist_matrix[sq_pair[1], sq_pair[0]] = output[n]
 
     # calculate coverage of neighborhood of every sequence
-    print('calculating coverage of every neighborhood...')
-
-    print('selecting motifs that have high-coverage neighborhoods...')
+    
     sort_scores = sorted(output)
-    thresh = sort_scores[int(len(sort_scores) * score_prop_thresh)]
-    thresh = max(thresh, min([x for x in sort_scores if x > 0]))
-    motif_inds = calculate_coverage(dist_matrix, sqs, thresh, (np.min(cardinalities) * min_occurrences))
+    thresh = sort_scores[int(len(sort_scores) * score_prop_thresh) - 1] 
+
+    # scores are multiplied by this factor in sequence alignment to keep everything an integer. divide by this
+    # again for showing to the user
+    factor = np.abs(match_weights[1])
+    thresh = min(thresh, max_score * factor)
+    print(
+        f'effective score threshold: {thresh / factor}\n'
+        f'median score:{np.mean(output) / factor}'
+        f'max: {np.max(output) / factor}'
+        f'min: {np.min(output) / factor}'
+    )
+
+    print('calculating coverage of the neighborhood of every sequence...')
+    motif_inds = calculate_coverage(dist_matrix, sqs, thresh, min_coverage=(np.min(cardinalities) * min_occurrences))
+
+    print('selecting motifs from high-coverage neighborhoods...')
     motif_labels = filter_neighborhoods(motif_inds, thresh, dist_matrix, sqs)
 
     motif_probs = []
-    # motif_inds = []
+    all_covered_notes = set()
     for c, ind in enumerate(motif_inds):
         vps = [vp_seq[x] for x in sqs[ind]]
-        prob = mp.get_prob_of_sequence(vps, markov)
         sqs_inds_in_cluster = np.nonzero(motif_labels == c)[0]
-        raw_inds = [sqs[i] for i in sqs_inds_in_cluster]
 
         # don't add anything that's dropped below requisite number of occurrences
-        if len(sqs_inds_in_cluster) >= min_occurrences:
+        if len(sqs_inds_in_cluster) < min_occurrences:
+            continue
 
-            motif_probs.append({
-                'score':prob,
-                'sq_inds': sqs_inds_in_cluster,
-                'note_inds': raw_inds,
-                'mean_cardinality': np.mean([len(x) for x in raw_inds]),
-                'num_occurrences': len(sqs_inds_in_cluster)
-                })
+        raw_inds = [sqs[i] for i in sqs_inds_in_cluster]
+        all_pairwise_distances = [dist_matrix[pair[0], pair[1]] for pair in combinations(sqs_inds_in_cluster, 2)]
+        pairwise_similarity = np.median(all_pairwise_distances)
+        center_similarity = np.median([dist_matrix[ind, x] for x in sqs_inds_in_cluster])
+        covered_notes = set(np.concatenate(raw_inds))
+        all_covered_notes.update(all_covered_notes)
 
-    motif_probs = sorted(motif_probs, key=lambda x: x['score'], reverse=True)
+        motif_probs.append({
+            'coverage': len(covered_notes) / len(vp_seq),
+            'pairwise_similarity': pairwise_similarity,
+            'center_similarity': center_similarity,
+            'prototype_ind': ind,
+            'prob_score': mp.get_prob_of_sequence(vps, markov),
+            'sq_inds': sqs_inds_in_cluster,
+            'note_inds': raw_inds,
+            'mean_cardinality': np.mean([len(x) for x in raw_inds]),
+            'num_occurrences': len(sqs_inds_in_cluster)
+            })
 
-    return motif_probs, sqs, vp_seq, mus_xml
+    motif_probs = sorted(motif_probs, key=lambda x: x['prob_score'], reverse=True)
+
+    motif_summary_dict = {
+        'motifs': motif_probs, 
+        'num_motifs': len(motif_probs),
+        'global_coverage': len(all_covered_notes) / len(vp_seq),
+        'avg_pairwise_similarity': np.mean([x['pairwise_similarity'] for x in motif_probs]),
+        'avg_center_similarity': np.mean([x['center_similarity'] for x in motif_probs]),
+    }
+
+    return motif_summary_dict, vp_seq, mus_xml, output
 
 def export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name):
 
-    folder_name = f'./exports/{tune_name}, ' + '-'.join(params['keys'])
+    folder_name = os.path.join('./exports', f'{tune_name}, ' + '-'.join(params['keys']))
     os.mkdir(folder_name)
     for i, motif in enumerate(motifs_to_export):
 
         viz_seqs = motif['note_inds']
         occs = motif['num_occurrences']
-        score = motif['score']
+        score = motif['prob_score']
         cardinality = np.round(motif['mean_cardinality'], 2)
-        fname = f'{folder_name}/{tune_name}_developing_motif-{i} freq-{occs} card-{cardinality}'
+        fname = os.path.join(f'{folder_name}', f'{tune_name}-{i} freq-{occs} card-{cardinality}')
         viz_score = vm.vis_developing_motif(viz_seqs, mus_xml)
-        viz_score.write('musicxml.pdf', fp=fname)
+        viz_score.write('musicxml.pdf', fp=str(fname))
 
         with open(f"{fname} description.txt", "a") as f:
             f.write(f'Params: {str(params)} \n')
@@ -240,21 +269,23 @@ if __name__ == '__main__':
         # r'Konitz\Konitz - Lennie-Bird.musicxml',
         # 'parker_transcriptions\\1947 02 01 Home Cookin\' 2 YouTube.mxl',
         # r'parker_transcriptions\1947 03 09 Ornithology III.mxl',
-        r'parker_transcriptions\1946 01 28 I Can t Get Started.mxl',
+        # r'parker_transcriptions\1946 01 28 I Can t Get Started.mxl',
         # r'parker_transcriptions\Meshigene - transcription sax solo.musicxml',
         # r'parker_transcriptions\Falling Grace solo.musicxml',
-        # r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
+        r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
         ]
     us = m21.environment.UserSettings()
 
     params = {
         'cardinalities': [4, 5, 6, 7, 8],
         'max_length_difference': 2,
-        'min_occurrences': 4,
-        'score_prop_thresh': 0.02,
-        'markov_prob_thresh': 0.8,
-        'seq_compare_dist_threshold': 300,
-        'keys': ['diatonic_int_size']
+        'min_occurrences': 5,
+        'score_prop_thresh': 1,
+        'max_score': 0.5,
+        'markov_prob_thresh': 0.99,
+        'seq_compare_dist_threshold': 500,
+        'partial_matches': True,
+        'keys': ['durs', 'melodic_peaks']
     }
 
 
@@ -262,10 +293,13 @@ if __name__ == '__main__':
     markov = mp.make_markov_prob_dicts(xml_roots, params['keys'])
     fname = fnames[0]
 
+    motif_summary, vp_seq, mus_xml, reuse_output = process_mus_xml(fname, markov, **params)
 
-    motifs_to_export, sqs, vp_seq, mus_xml = process_mus_xml(fname, markov, **params)
+    params['max_score'] = 0.25
+
+    motif_summary, vp_seq, mus_xml, reuse_output = process_mus_xml(fname, markov, precomputed_pairs_output=reuse_output, **params)
+
     tune_name = fname.split('\\')[-1]
 
-    export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name)
-
+    # export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name)
     
