@@ -194,8 +194,9 @@ def process_mus_xml(fname, markov, cardinalities=None, keys=None,
         sqs_inds_in_cluster = np.nonzero(motif_labels == c)[0]
         raw_inds = [sqs[i] for i in sqs_inds_in_cluster]
 
-        # remove anything that's dropped below requisite number of occurrences
+        # don't add anything that's dropped below requisite number of occurrences
         if len(sqs_inds_in_cluster) >= min_occurrences:
+
             motif_probs.append({
                 'score':prob,
                 'sq_inds': sqs_inds_in_cluster,
@@ -206,7 +207,31 @@ def process_mus_xml(fname, markov, cardinalities=None, keys=None,
 
     motif_probs = sorted(motif_probs, key=lambda x: x['score'], reverse=True)
 
-    return motif_probs, sqs, mus_xml
+    return motif_probs, sqs, vp_seq, mus_xml
+
+def export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name):
+
+    folder_name = f'./exports/{tune_name}, ' + '-'.join(params['keys'])
+    os.mkdir(folder_name)
+    for i, motif in enumerate(motifs_to_export):
+
+        viz_seqs = motif['note_inds']
+        occs = motif['num_occurrences']
+        score = motif['score']
+        cardinality = np.round(motif['mean_cardinality'], 2)
+        fname = f'{folder_name}/{tune_name}_developing_motif-{i} freq-{occs} card-{cardinality}'
+        viz_score = vm.vis_developing_motif(viz_seqs, mus_xml)
+        viz_score.write('musicxml.pdf', fp=fname)
+
+        with open(f"{fname} description.txt", "a") as f:
+            f.write(f'Params: {str(params)} \n')
+            f.write(f'Sequence score = {score:.3f}\n')
+            for j, seq in enumerate(viz_seqs):
+                f.write(f'Occurrence {j}: notes {str(seq)}\n')
+                for k, idx in enumerate(seq):
+                    vps = str(vp_seq[idx]).replace('\'', r'').replace('),', ')')
+                    f.write(f'    {vps} \n')
+
 
 if __name__ == '__main__':
 
@@ -226,38 +251,21 @@ if __name__ == '__main__':
         'cardinalities': [4, 5, 6, 7, 8],
         'max_length_difference': 2,
         'min_occurrences': 4,
-        'score_prop_thresh': 0.05,
+        'score_prop_thresh': 0.02,
         'markov_prob_thresh': 0.8,
         'seq_compare_dist_threshold': 300,
-        'keys': ['durs', 'long_durs', 'rough_contour', 'diatonic_int_size']
+        'keys': ['diatonic_int_size']
     }
 
 
     print('making markov model...')
     markov = mp.make_markov_prob_dicts(xml_roots, params['keys'])
+    fname = fnames[0]
 
-    motifs_to_export, sqs, mus_xml = process_mus_xml(fnames[0], markov, **params)
 
-    # for fname in fnames:
- 
-    # print(f"exporting top motifs")
-    # folder_name = f'./exports/{tune_name}, ' + '-'.join(keys)
-    # os.mkdir(folder_name)
-    # for i, c in enumerate(motifs_to_export):
+    motifs_to_export, sqs, vp_seq, mus_xml = process_mus_xml(fname, markov, **params)
+    tune_name = fname.split('\\')[-1]
 
-    #     sqs_inds_in_cluster = np.nonzero(motif_labels == c)[0]
-    #     viz_seqs = [list(sqs[i]) for i in sqs_inds_in_cluster]
-    #     occs = len(viz_seqs)
-    #     cardinality = len(viz_seqs[0])
-    #     fname = f'{folder_name}/{tune_name}_developing_motif-{c} freq-{occs} card-{cardinality}'
-    #     viz_score = vm.vis_developing_motif(viz_seqs, mus_xml)
-    #     viz_score.write('musicxml.pdf', fp=fname)
+    export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name)
 
-    #     with open(f"{fname} description.txt", "a") as f:
-    #         f.write(f'Viewpoints: {str(keys)} \n')
-    #         f.write(f'Sequence score = {sqs_probs[motif_inds[c]]:.3f}\n')
-    #         for j, seq in enumerate(viz_seqs):
-    #             f.write(f'Occurrence {j}: notes {str(seq)}\n')
-    #             for k, idx in enumerate(seq):
-    #                 vps = str(vp_seq[idx]).replace('\'', r'').replace('),', ')')
-    #                 f.write(f'    {vps} \n')
+    
