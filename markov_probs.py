@@ -11,19 +11,22 @@ def counter_to_prob(c):
         c[k2] = c[k2] / s
     return c
 
-def make_markov_prob_dicts(xml_root, keys):
+def make_markov_prob_dicts(xml_roots, keys):
 
-    all_fnames = [x for x in os.listdir(xml_root) if '.mxl' in x or '.musicxml' in x] 
+    all_fnames = []
+    for xml_root in xml_roots:
+        fnames = [ os.path.join(xml_root, x) for x in os.listdir(xml_root) if '.mxl' in x or '.musicxml' in x] 
+        all_fnames.extend(fnames)
+
     all_viewpoints = {}
 
-    for i, fname in enumerate(all_fnames):
-        full_path = os.path.join(xml_root, fname)
+    for i, full_path in enumerate(all_fnames):
         mus_xml = m21.converter.parse(full_path)
 
         print(f'making markov model... processing score {i} of {len(all_fnames)}')
         mus_xml_copy = gv.collapse_tied_notes(mus_xml)
         main_feat_dict = gv.get_viewpoints(mus_xml_copy)
-        all_viewpoints[fname] = main_feat_dict
+        all_viewpoints[full_path] = main_feat_dict
 
     markov0 = Counter()
     markov1 = defaultdict(Counter)
