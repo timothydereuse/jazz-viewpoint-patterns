@@ -19,7 +19,7 @@ def get_all_subsequences(num_events, cardinalities):
     sqs = sorted(sqs, key=lambda x: tuple(x))
     return sqs
 
-def filter_subsequences(main_feat_seq, sqs):
+def filter_subsequences(main_feat_seq, sqs, weak_start_end=False):
 
     # subsequences must:
     # - not contain a rest of a quarter note or longer
@@ -44,11 +44,12 @@ def filter_subsequences(main_feat_seq, sqs):
 
         first_weak = (sq_feats[0]['beat_subdivision'] < 4) and (preceding_note['next_offset_time'] < quarter_beat_multiplier)
         last_weak = (sq_feats[-1]['beat_subdivision'] < 4) and (sq_feats[-1]['next_offset_time'] < quarter_beat_multiplier)
-        if (first_weak and last_weak):
+        weak = (first_weak and last_weak) if weak_start_end else (first_weak or last_weak)
+        if weak:
             flag_remove[sq_index] = 1
             continue
 
-        if (all(x['next_offset_time'] == sq_feats[0]['next_offset_time'] for x in sq_feats) and
+        if (all(x['next_offset_time'] == sq_feats[0]['next_offset_time'] for x in sq_feats) or
             all(x['contour'] == sq_feats[0]['contour'] for x in sq_feats)):
             flag_remove[sq_index] = 1
             continue
@@ -126,7 +127,7 @@ def get_viewpoints(mus_xml):
     dur_contour = np.sign(np.insert(np.diff(durs), 0, 0))
     vps['dur_contour'] = dur_contour
 
-    # duration ratio
+    # # duration ratio
     # dur_ratio = [durs[i+1] / durs[i] for i in range(len(durs) - 1)]
     # dur_ratio = np.round(np.log2(np.array(dur_ratio, dtype='float')))
     # vps['dur_ratio'] = np.append(dur_ratio, 0).astype('int')
@@ -195,9 +196,11 @@ def get_viewpoints(mus_xml):
 
     # diatonic interval size
     try:
-        diatonic_int_size = np.append(0, [int(x.name[-1]) for x in intervals])
+        rmv = lambda x: int(''.join(a for a in list(x) if a.isdigit()))
+        diatonic_int_size = np.append(0, [rmv(x.name) * np.sign(x.semitones) for x in intervals])
         vps['diatonic_int_size'] = diatonic_int_size
-    except IndexError:
+    except ValueError:
+        print([x.name for x in intervals])
         ind = [x for x in range(len(intervals)) if intervals[x].name == '']
         print(notes[ind[0]], notes[ind[1]])
         raise
@@ -286,7 +289,6 @@ if __name__ == '__main__':
 
 
     cardinalities = [5, 6, 7]
-
 
     fname = "Meshigene - transcription sax solo.musicxml"
     mus_xml = m21.converter.parse(fname)
