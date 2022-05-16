@@ -1,6 +1,9 @@
 exports/*
 parker_transcriptions/*
 *.zip
+*.pdf
+*.musx
+*.sib
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
