@@ -7,13 +7,13 @@ from fractions import Fraction
 from pathlib import Path
 from itertools import combinations
 import affine_needleman_wunsch as nw
-from joblib import Parallel, delayed
-from numpy.lib.stride_tricks import as_strided
+from copy import copy
 import visualize_motifs as vm
 import generate_viewpoints as gv
 import markov_probs as mp
 import pattern
 from importlib import reload
+import csv
 reload(vm)
 reload(gv)
 reload(mp)
@@ -212,10 +212,10 @@ def process_mus_xml(fname, markov, cardinalities=None, keys=None,
         pairwise_similarity = np.median(all_pairwise_distances)
         center_similarity = np.median([dist_matrix[ind, x] for x in sqs_inds_in_cluster])
         covered_notes = set(np.concatenate(raw_inds))
-        all_covered_notes.update(all_covered_notes)
+        all_covered_notes.update(covered_notes)
 
         motif_probs.append({
-            'coverage': len(covered_notes) / len(vp_seq),
+            'coverage': float(len(covered_notes)) / float(len(vp_seq)),
             'pairwise_similarity': pairwise_similarity,
             'center_similarity': center_similarity,
             'prototype_ind': ind,
@@ -231,6 +231,8 @@ def process_mus_xml(fname, markov, cardinalities=None, keys=None,
     motif_summary_dict = {
         'motifs': motif_probs, 
         'num_motifs': len(motif_probs),
+        'mean_num_occurences': np.mean([x['num_occurrences'] for x in motif_probs]),
+        'mean_mean_cardinality': np.mean([x['mean_cardinality'] for x in motif_probs]),
         'global_coverage': len(all_covered_notes) / len(vp_seq),
         'avg_pairwise_similarity': np.mean([x['pairwise_similarity'] for x in motif_probs]),
         'avg_center_similarity': np.mean([x['center_similarity'] for x in motif_probs]),
@@ -266,40 +268,109 @@ if __name__ == '__main__':
 
     xml_roots = [r'.\parker_transcriptions', r'.\Konitz']
     fnames = [
-        # r'Konitz\Konitz - Lennie-Bird.musicxml',
-        # 'parker_transcriptions\\1947 02 01 Home Cookin\' 2 YouTube.mxl',
-        # r'parker_transcriptions\1947 03 09 Ornithology III.mxl',
-        # r'parker_transcriptions\1946 01 28 I Can t Get Started.mxl',
-        # r'parker_transcriptions\Meshigene - transcription sax solo.musicxml',
-        # r'parker_transcriptions\Falling Grace solo.musicxml',
+        r'parker_transcriptions\1947 02 01 Home Cookin 2 YouTube.mxl',
+        r'Konitz\Konitz - Lennie-Bird.musicxml',
+        r'parker_transcriptions\1945 11 26 Koko Savoy Vol 1.mxl',
+        r'parker_transcriptions\1945 11 26 Koko take 1.mxl',
+        r'parker_transcriptions\1945 11 26 Koko take 2.mxl',
+        r'parker_transcriptions\1946 01 28 I Can t Get Started.mxl',
+        r'parker_transcriptions\1947 03 04 Hot House 2.mxl',
+        r'parker_transcriptions\1946 01 28 Oh Lady Be Good.mxl',
+        r'parker_transcriptions\1947 03 04 Hot House.mxl',
+        r'parker_transcriptions\1947 03 09 Ornithology III.mxl',
+        r'parker_transcriptions\1947 03 09 Ornithology.mxl',
+        r'parker_transcriptions\1946 01 28 I Can t Get Started.mxl',
         r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
+        r'parker_transcriptions\1947 05 08 Donna Lee IV.mxl',
+        r'parker_transcriptions\1947 05 08 Donna Lee III.mxl',
+        r'parker_transcriptions\1953 02 22 fine And Dandy Washington YouTube.mxl',
         ]
     us = m21.environment.UserSettings()
 
-    params = {
-        'cardinalities': [4, 5, 6, 7, 8],
+    keysets = [
+        ['durs', 'melodic_peaks'],
+        ['durs', 'dur_contour'],
+        ['durs', 'dur_contour', 'melodic_peaks'],
+        ['durs', 'intervals_semitones'],
+        ['durs', 'rough_contour'],
+        ['durs', 'skips'],
+        ['durs', 'sharp_melodic_peaks'],
+        ['durs', 'diatonic_int_size'],
+        ['durs', 'pitches'],
+        ['durs', 'melodic_peaks'],
+        ['durs', 'interval_class'],
+        ['durs', 'melodic_peaks', 'dur_contour'],
+        ['durs', 'rough_contour', 'interval_class'],
+        ['durs', 'rough_contour', 'intervals_semitones'],
+        ['durs', 'rough_contour', 'diatonic_int_size'],
+        ['durs', 'rough_contour', 'pitches'],
+        ['pitches', 'interval_class'],
+        ['pitches', 'melodic_peaks'],
+        ['pitches', 'rough_contour'],
+        ['intervals_semitones', 'diatonic_int_size'],
+        ['intervals_semitones', 'melodic_peaks'],
+        ['intervals_semitones', 'rough_contour'],
+    ]
+
+    base_params = {
+        'cardinalities': [5, 6, 7, 8],
         'max_length_difference': 2,
         'min_occurrences': 5,
         'score_prop_thresh': 1,
         'max_score': 0.5,
-        'markov_prob_thresh': 0.99,
+        'markov_prob_thresh': 0.5,
         'seq_compare_dist_threshold': 500,
         'partial_matches': True,
         'keys': ['durs', 'melodic_peaks']
     }
 
+    max_scores_to_try = [1/4, 1/3, 1/2, 3/4, 1]
 
-    print('making markov model...')
-    markov = mp.make_markov_prob_dicts(xml_roots, params['keys'])
-    fname = fnames[0]
+    results = []
 
-    motif_summary, vp_seq, mus_xml, reuse_output = process_mus_xml(fname, markov, **params)
+    for keyset in keysets:
+        print(f'using keyset {keyset}...')
+        print('making markov model...')
 
-    params['max_score'] = 0.25
+        params = copy(base_params)
+        params['keys'] = keyset
+        markov = mp.make_markov_prob_dicts(xml_roots, params['keys'])
+        
+        for fname in fnames:
+            reuse_output = None
 
-    motif_summary, vp_seq, mus_xml, reuse_output = process_mus_xml(fname, markov, precomputed_pairs_output=reuse_output, **params)
+            for max_score in max_scores_to_try:
+                params['max_score'] = max_score
 
-    tune_name = fname.split('\\')[-1]
+                motif_summary, vp_seq, mus_xml, opt = process_mus_xml(fname, markov, precomputed_pairs_output=reuse_output, **params)
+                reuse_output = opt
+
+                tune_name = fname.split('\\')[-1]
+
+                result = copy(motif_summary)
+                for x in params.keys():
+                    result[x] = params[x]
+                result['tune_name'] = tune_name
+                results.append(result)
+
+
+    header = sorted(list(results[0].keys()))
+    header.remove('motifs')
+
+    with open('results.csv', 'w', newline='') as f:
+        # create the csv writer
+        writer = csv.writer(f)
+
+        # write a row to the csv file
+        writer.writerow(header)
+        for result in results:
+            entries = [result[x] for x in header]
+            writer.writerow(entries)
+
+
+
+
+        
 
     # export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name)
     

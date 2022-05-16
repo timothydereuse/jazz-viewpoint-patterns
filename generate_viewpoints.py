@@ -49,8 +49,7 @@ def filter_subsequences(main_feat_seq, sqs, weak_start_end=False):
             flag_remove[sq_index] = 1
             continue
 
-        if (all(x['next_offset_time'] == sq_feats[0]['next_offset_time'] for x in sq_feats) or
-            all(x['contour'] == sq_feats[0]['contour'] for x in sq_feats)):
+        if (all(x['next_offset_time'] == sq_feats[0]['next_offset_time'] for x in sq_feats)):
             flag_remove[sq_index] = 1
             continue
     
