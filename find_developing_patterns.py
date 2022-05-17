@@ -266,65 +266,64 @@ def export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name):
 
 if __name__ == '__main__':
 
-    xml_roots = [r'.\parker_transcriptions', r'.\Konitz']
+    xml_roots = [r'.\parker_transcriptions', r'.\konitz_transcriptions', r'.\other_transcriptions']
     fnames = [
-        r'parker_transcriptions\1947 02 01 Home Cookin 2 YouTube.mxl',
-        r'Konitz\Konitz - Lennie-Bird.musicxml',
-        r'parker_transcriptions\1945 11 26 Koko Savoy Vol 1.mxl',
-        r'parker_transcriptions\1945 11 26 Koko take 1.mxl',
-        r'parker_transcriptions\1945 11 26 Koko take 2.mxl',
-        r'parker_transcriptions\1946 01 28 I Can t Get Started.mxl',
-        r'parker_transcriptions\1947 03 04 Hot House 2.mxl',
-        r'parker_transcriptions\1946 01 28 Oh Lady Be Good.mxl',
-        r'parker_transcriptions\1947 03 04 Hot House.mxl',
-        r'parker_transcriptions\1947 03 09 Ornithology III.mxl',
-        r'parker_transcriptions\1947 03 09 Ornithology.mxl',
-        r'parker_transcriptions\1946 01 28 I Can t Get Started.mxl',
-        r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
-        r'parker_transcriptions\1947 05 08 Donna Lee IV.mxl',
-        r'parker_transcriptions\1947 05 08 Donna Lee III.mxl',
-        r'parker_transcriptions\1953 02 22 fine And Dandy Washington YouTube.mxl',
+        # r'parker_transcriptions\1945 11 26 Koko Savoy Vol 1.mxl',
+        # r'parker_transcriptions\1945 11 26 Koko take 1.mxl',
+        # r'parker_transcriptions\1945 11 26 Koko take 2.mxl',
+        # r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
+        # r'parker_transcriptions\1947 05 08 Donna Lee IV.mxl',
+        # r'parker_transcriptions\1947 05 08 Donna Lee III.mxl',
+        # r'parker_transcriptions\1953 02 22 fine And Dandy Washington YouTube.mxl',
+        # r'parker_transcriptions\Parker on What is this thing called love (jam session).musicxml',
+        # r'konitz_transcriptions\Lee Konitz - Subconscious-lee.musicxml',
+        # r'konitz_transcriptions\donna lee - konitz.musicxml',
+        # r'konitz_transcriptions\Konitz - Lennie-Bird.musicxml',
+        r'konitz_transcriptions\Lee Konitz on Marshmallow.musicxml',
+        # r'konitz_transcriptions\Lee Konitz on Sax of a Kind.musicxml',
+        # r'konitz_transcriptions\Lee Konitz on Star Eyes.musicxml'
         ]
     us = m21.environment.UserSettings()
 
     keysets = [
         ['durs', 'melodic_peaks'],
-        ['durs', 'dur_contour'],
-        ['durs', 'dur_contour', 'melodic_peaks'],
+        # ['durs', 'dur_contour'],
+        # ['durs', 'dur_contour', 'melodic_peaks'],
         ['durs', 'intervals_semitones'],
         ['durs', 'rough_contour'],
-        ['durs', 'skips'],
-        ['durs', 'sharp_melodic_peaks'],
-        ['durs', 'diatonic_int_size'],
-        ['durs', 'pitches'],
-        ['durs', 'melodic_peaks'],
-        ['durs', 'interval_class'],
-        ['durs', 'melodic_peaks', 'dur_contour'],
-        ['durs', 'rough_contour', 'interval_class'],
-        ['durs', 'rough_contour', 'intervals_semitones'],
-        ['durs', 'rough_contour', 'diatonic_int_size'],
-        ['durs', 'rough_contour', 'pitches'],
-        ['pitches', 'interval_class'],
-        ['pitches', 'melodic_peaks'],
-        ['pitches', 'rough_contour'],
-        ['intervals_semitones', 'diatonic_int_size'],
-        ['intervals_semitones', 'melodic_peaks'],
-        ['intervals_semitones', 'rough_contour'],
+        # ['durs', 'skips'],
+        # ['durs', 'sharp_melodic_peaks'],
+        # ['durs', 'diatonic_int_size'],
+        # ['durs', 'pitches'],
+        # ['durs', 'melodic_peaks'],
+        # ['durs', 'interval_class'],
+        # ['durs', 'melodic_peaks', 'dur_contour'],
+        # ['durs', 'rough_contour', 'interval_class'],
+        # ['durs', 'rough_contour', 'intervals_semitones'],
+        # ['durs', 'rough_contour', 'diatonic_int_size'],
+        # ['durs', 'rough_contour', 'pitches'],
+        # ['pitches', 'interval_class'],
+        # ['pitches', 'melodic_peaks'],
+        # ['pitches', 'rough_contour'],
+        # ['intervals_semitones', 'diatonic_int_size'],
+        # ['intervals_semitones', 'melodic_peaks'],
+        # ['intervals_semitones', 'rough_contour'],
     ]
 
     base_params = {
         'cardinalities': [5, 6, 7, 8],
         'max_length_difference': 2,
-        'min_occurrences': 5,
+        'min_occurrences': 4,
         'score_prop_thresh': 1,
         'max_score': 0.5,
         'markov_prob_thresh': 0.5,
-        'seq_compare_dist_threshold': 500,
+        'seq_compare_dist_threshold': 10000,
         'partial_matches': True,
         'keys': ['durs', 'melodic_peaks']
     }
 
-    max_scores_to_try = [1/4, 1/3, 1/2, 3/4, 1]
+    # max_scores_to_try = [1/4, 1/3, 1/2, 3/4, 1]
+    max_scores_to_try = [1/2, 3/4]
 
     results = []
 
@@ -353,7 +352,6 @@ if __name__ == '__main__':
                 result['tune_name'] = tune_name
                 results.append(result)
 
-
     header = sorted(list(results[0].keys()))
     header.remove('motifs')
 
@@ -366,11 +364,6 @@ if __name__ == '__main__':
         for result in results:
             entries = [result[x] for x in header]
             writer.writerow(entries)
-
-
-
-
-        
 
     # export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name)
     
