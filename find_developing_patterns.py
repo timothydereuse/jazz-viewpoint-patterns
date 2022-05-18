@@ -236,8 +236,8 @@ def process_mus_xml(mus_xml, markov, cardinalities=None, keys=None,
     return motif_summary_dict, vp_seq, mus_xml, output
 
 def export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name):
-
-    folder_name = os.path.join('./exports', f'{tune_name}, ' + '-'.join(params['keys']))
+    keys_str = '-'.join(params['keys'])
+    folder_name = os.path.join('./exports', f'{keys_str} {tune_name}')
     os.mkdir(folder_name)
     for i, motif in enumerate(motifs_to_export):
 
@@ -249,14 +249,29 @@ def export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name):
         viz_score = vm.vis_developing_motif(viz_seqs, mus_xml)
         viz_score.write('musicxml.pdf', fp=str(fname))
 
+        flat_notes = list(mus_xml.flat.notes)
+        flat_notes = [x for x in flat_notes if (not x.tie) or (x.tie.type == 'start')]
+        flat_notes = [n for n in flat_notes if not type(n) is m21.harmony.ChordSymbol]
+
         with open(f"{fname} description.txt", "a") as f:
             f.write(f'Params: {str(params)} \n')
             f.write(f'Sequence score = {score:.3f}\n')
             for j, seq in enumerate(viz_seqs):
                 f.write(f'Occurrence {j}: notes {str(seq)}\n')
+                seq_records = ''
+                note_records = ''
                 for k, idx in enumerate(seq):
+
+                    next_offset = flat_notes[idx + 1].offset - flat_notes[idx].offset if idx < len(flat_notes) else 1
+                    rest_amt = next_offset - flat_notes[idx].duration.quarterLength
+                    rest_string = f'+Rest{rest_amt}' if rest_amt > 0.01 else ''
+
+                    note_record = f'{flat_notes[idx].pitch.name}{flat_notes[idx].pitch.octave}-' \
+                                  f'{flat_notes[idx].duration.type}{rest_string} '
                     vps = str(vp_seq[idx]).replace('\'', r'').replace('),', ')')
-                    f.write(f'    {vps} \n')
+                    seq_records = f'{seq_records} {vps}'
+                    note_records += note_record
+                f.write(f'{seq_records}\n{note_records}\n\n')
 
 
 if __name__ == '__main__':
@@ -266,7 +281,7 @@ if __name__ == '__main__':
         # r'parker_transcriptions\1945 11 26 Koko Savoy Vol 1.mxl',
         # r'parker_transcriptions\1945 11 26 Koko take 1.mxl',
         # r'parker_transcriptions\1945 11 26 Koko take 2.mxl',
-        # r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
+        r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
         # r'parker_transcriptions\1947 05 08 Donna Lee IV.mxl',
         # r'parker_transcriptions\1947 05 08 Donna Lee III.mxl',
         # r'parker_transcriptions\1953 02 22 fine And Dandy Washington YouTube.mxl',
@@ -277,7 +292,8 @@ if __name__ == '__main__':
         # r'konitz_transcriptions\Lee Konitz on Marshmallow.musicxml',
         # r'konitz_transcriptions\Lee Konitz on Sax of a Kind.musicxml',
         # r'konitz_transcriptions\Lee Konitz on Star Eyes.musicxml'
-        r'konitz_transcriptions\all_konitz_solos.musicxml'
+        # r'konitz_transcriptions\all_konitz_solos.musicxml',
+        # r'parker_transcriptions\all_parker_solos.musicxml'
         ]
     us = m21.environment.UserSettings()
 
@@ -285,14 +301,14 @@ if __name__ == '__main__':
         # ['durs', 'melodic_peaks'],
         # ['durs', 'dur_contour'],
         ['durs', 'dur_contour', 'rough_contour'],
-        ['durs', 'intervals_semitones'],
+        # ['durs', 'intervals_semitones'],
         # ['durs', 'rough_contour'],
         # ['durs', 'skips'],
-        # ['durs', 'sharp_melodic_peaks'],
+        ['durs', 'sharp_melodic_peaks'],
         # ['durs', 'diatonic_int_size'],
-        ['durs', 'pitches'],
+        # ['durs', 'pitches'],
         # ['durs', 'melodic_peaks'],
-        # ['durs', 'interval_class'],
+        ['durs', 'interval_class'],
         # ['durs', 'melodic_peaks', 'dur_contour'],
         # ['durs', 'rough_contour', 'interval_class'],
         # ['durs', 'rough_contour', 'intervals_semitones'],
@@ -301,7 +317,7 @@ if __name__ == '__main__':
         # ['pitches', 'interval_class'],
         # ['pitches', 'melodic_peaks'],
         # ['pitches', 'rough_contour'],
-        # ['intervals_semitones', 'diatonic_int_size'],
+        ['intervals_semitones', 'diatonic_int_size'],
         # ['intervals_semitones', 'melodic_peaks'],
         # ['intervals_semitones', 'rough_contour'],
     ]
@@ -319,7 +335,7 @@ if __name__ == '__main__':
     }
 
     # max_scores_to_try = [1/4, 1/3, 1/2, 3/4, 1]
-    max_scores_to_try = [0.5, 0.75]
+    max_scores_to_try = [1]
 
     results = []
 
