@@ -1,0 +1,85 @@
+avg_center_similarity,avg_pairwise_similarity,cardinalities,global_coverage,keys,markov_prob_thresh,max_length_difference,max_score,mean_mean_cardinality,mean_num_occurences,min_occurrences,num_motifs,partial_matches,score_prop_thresh,seq_compare_dist_threshold,tune_name
+1.2041558441558442,1.3387012987012985,"[5, 6, 7]",0.21311475409836064,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.176587301587301,10.6,5,5,True,1,100000,1945 11 26 Koko Savoy Vol 1.mxl
+0.6422339565196709,0.8574473145901716,"[5, 6, 7]",0.16939890710382513,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,6.359183673469388,6.142857142857143,5,7,True,1,100000,1945 11 26 Koko Savoy Vol 1.mxl
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,nan,nan,5,0,True,1,100000,1945 11 26 Koko take 1.mxl
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,nan,nan,5,0,True,1,100000,1945 11 26 Koko take 1.mxl
+1.0966176680462394,1.3411826268969127,"[5, 6, 7]",0.2773809523809524,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.598995448995448,11.142857142857142,5,7,True,1,100000,1945 11 26 Koko take 2.mxl
+0.7207385207385207,0.8137751137751138,"[5, 6, 7]",0.20476190476190476,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,6.095105820105821,7.111111111111111,5,9,True,1,100000,1945 11 26 Koko take 2.mxl
+1.0952380952380951,1.5091575091575091,"[5, 6, 7]",0.39841688654353563,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.699964387464388,12.666666666666666,5,3,True,1,100000,1947 05 08 Donna Lee V.mxl
+0.798901098901099,0.8944805194805194,"[5, 6, 7]",0.3007915567282322,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,6.238888888888889,7.0,5,4,True,1,100000,1947 05 08 Donna Lee V.mxl
+1.331918081918082,1.3333333333333333,"[5, 6, 7]",0.3010471204188482,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.658333333333334,8.75,5,4,True,1,100000,1947 05 08 Donna Lee IV.mxl
+0.589110889110889,0.7071428571428571,"[5, 6, 7]",0.21204188481675393,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,6.1499999999999995,5.25,5,4,True,1,100000,1947 05 08 Donna Lee IV.mxl
+1.0164835164835164,1.1593406593406594,"[5, 6, 7]",0.44565217391304346,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.856283068783068,7.666666666666667,5,6,True,1,100000,1947 05 08 Donna Lee III.mxl
+0.6039674611103182,0.7727272727272726,"[5, 6, 7]",0.33967391304347827,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,6.29047619047619,5.428571428571429,5,7,True,1,100000,1947 05 08 Donna Lee III.mxl
+1.3053137338851624,1.4840397697540555,"[5, 6, 7]",0.4113573407202216,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.684553541696398,12.428571428571429,5,7,True,1,100000,1953 02 22 fine And Dandy Washington YouTube.mxl
+0.7167832167832168,0.9286213786213786,"[5, 6, 7]",0.278393351800554,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,6.348904220779221,7.0,5,8,True,1,100000,1953 02 22 fine And Dandy Washington YouTube.mxl
+1.3324675324675324,1.3658008658008658,"[5, 6, 7]",0.3016949152542373,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.333333333333333,13.0,5,4,True,1,100000,Parker on What is this thing called love (jam session).musicxml
+0.6155844155844156,0.8578606578606578,"[5, 6, 7]",0.27796610169491526,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,6.348941798941799,6.777777777777778,5,9,True,1,100000,Parker on What is this thing called love (jam session).musicxml
+1.4285714285714286,1.4285714285714286,"[5, 6, 7]",0.17857142857142858,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,7.0,5.0,5,1,True,1,100000,Lee Konitz - Subconscious-lee.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Lee Konitz - Subconscious-lee.musicxml
+0.924646781789639,1.2998430141287283,"[5, 6, 7]",0.3290414878397711,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.7953183138057085,11.428571428571429,5,7,True,1,100000,donna lee - konitz.musicxml
+0.7046287046287046,0.9062604062604062,"[5, 6, 7]",0.2317596566523605,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,6.680952380952381,7.0,5,6,True,1,100000,donna lee - konitz.musicxml
+1.1915227629513345,1.4392987964416537,"[5, 6, 7]",0.20851063829787234,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.552020202020202,9.571428571428571,5,7,True,1,100000,Konitz - Lennie-Bird.musicxml
+0.6850292564578279,0.8031825317539604,"[5, 6, 7]",0.12056737588652482,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,5.898639455782312,5.428571428571429,5,7,True,1,100000,Konitz - Lennie-Bird.musicxml
+1.2857142857142856,1.7142857142857142,"[5, 6, 7]",0.15864022662889518,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,7.0,8.0,5,1,True,1,100000,Lee Konitz on Marshmallow.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Lee Konitz on Marshmallow.musicxml
+1.2667332667332667,1.4615384615384617,"[5, 6, 7]",0.5364583333333334,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.685714285714286,7.0,5,3,True,1,100000,Lee Konitz on Sax of a Kind.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Lee Konitz on Sax of a Kind.musicxml
+1.3604728604728604,1.4768009768009767,"[5, 6, 7]",0.2278719397363465,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.8,6.561111111111111,6.166666666666667,5,6,True,1,100000,Lee Konitz on Star Eyes.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'dur_contour', 'rough_contour']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Lee Konitz on Star Eyes.musicxml
+1.1065434565434566,1.3322510822510822,"[5, 6, 7]",0.2896174863387978,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.410367063492064,8.75,5,8,True,1,100000,1945 11 26 Koko Savoy Vol 1.mxl
+0.6365967365967367,0.7543290043290044,"[5, 6, 7]",0.12704918032786885,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,5.826190476190476,5.833333333333333,5,6,True,1,100000,1945 11 26 Koko Savoy Vol 1.mxl
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,nan,nan,5,0,True,1,100000,1945 11 26 Koko take 1.mxl
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,nan,nan,5,0,True,1,100000,1945 11 26 Koko take 1.mxl
+1.2594072594072594,1.396825396825397,"[5, 6, 7]",0.2904761904761905,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.63515406162465,18.0,5,3,True,1,100000,1945 11 26 Koko take 2.mxl
+0.8195304695304695,0.916662504162504,"[5, 6, 7]",0.24166666666666667,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,6.081597222222222,6.875,5,8,True,1,100000,1945 11 26 Koko take 2.mxl
+1.019114219114219,1.3658008658008658,"[5, 6, 7]",0.37730870712401055,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.285470085470085,13.333333333333334,5,3,True,1,100000,1947 05 08 Donna Lee V.mxl
+0.7832167832167832,0.9414335664335665,"[5, 6, 7]",0.24274406332453827,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,5.659090909090909,7.25,5,4,True,1,100000,1947 05 08 Donna Lee V.mxl
+1.2117882117882115,1.492063492063492,"[5, 6, 7]",0.3795811518324607,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.6201923076923075,11.666666666666666,5,3,True,1,100000,1947 05 08 Donna Lee IV.mxl
+0.7645021645021645,0.7662337662337663,"[5, 6, 7]",0.3507853403141361,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,6.016666666666667,5.333333333333333,5,6,True,1,100000,1947 05 08 Donna Lee IV.mxl
+1.3476808905380333,1.38404452690167,"[5, 6, 7]",0.46195652173913043,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.56547619047619,7.142857142857143,5,7,True,1,100000,1947 05 08 Donna Lee III.mxl
+0.7164835164835165,0.8411255411255412,"[5, 6, 7]",0.32065217391304346,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,6.231944444444444,6.0,5,6,True,1,100000,1947 05 08 Donna Lee III.mxl
+1.164169164169164,1.492063492063492,"[5, 6, 7]",0.3545706371191136,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.575749559082893,23.333333333333332,5,3,True,1,100000,1953 02 22 fine And Dandy Washington YouTube.mxl
+0.7928959928959929,0.9100011100011101,"[5, 6, 7]",0.28254847645429365,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,6.09270482603816,7.111111111111111,5,9,True,1,100000,1953 02 22 fine And Dandy Washington YouTube.mxl
+1.2563436563436565,1.4354978354978356,"[5, 6, 7]",0.3677966101694915,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.473333333333334,13.0,5,5,True,1,100000,Parker on What is this thing called love (jam session).musicxml
+0.6912864912864912,0.8525696525696526,"[5, 6, 7]",0.30338983050847457,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,6.496693121693122,7.222222222222222,5,9,True,1,100000,Parker on What is this thing called love (jam session).musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,nan,nan,5,0,True,1,100000,Lee Konitz - Subconscious-lee.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Lee Konitz - Subconscious-lee.musicxml
+1.3619713619713618,1.4709734709734708,"[5, 6, 7]",0.28183118741058655,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.54920634920635,9.666666666666666,5,6,True,1,100000,donna lee - konitz.musicxml
+0.8502830502830503,0.985891885891886,"[5, 6, 7]",0.23891273247496422,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,6.288690476190475,6.833333333333333,5,6,True,1,100000,donna lee - konitz.musicxml
+1.1264735264735264,1.5137196137196136,"[5, 6, 7]",0.15602836879432624,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.49419191919192,9.6,5,5,True,1,100000,Konitz - Lennie-Bird.musicxml
+0.5324675324675324,0.7554112554112554,"[5, 6, 7]",0.10921985815602837,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,6.122619047619048,6.0,5,4,True,1,100000,Konitz - Lennie-Bird.musicxml
+1.3296703296703298,1.5714285714285714,"[5, 6, 7]",0.24929178470254956,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.9375,7.5,5,2,True,1,100000,Lee Konitz on Marshmallow.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Lee Konitz on Marshmallow.musicxml
+1.112887112887113,1.1684981684981686,"[5, 6, 7]",0.6041666666666666,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.558333333333334,8.0,5,3,True,1,100000,Lee Konitz on Sax of a Kind.musicxml
+0.7136197136197135,0.8218448218448217,"[5, 6, 7]",0.4895833333333333,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,6.605555555555555,5.166666666666667,5,6,True,1,100000,Lee Konitz on Sax of a Kind.musicxml
+1.3586413586413586,1.5181152181152178,"[5, 6, 7]",0.4726930320150659,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.8,6.547420634920636,8.6,5,10,True,1,100000,Lee Konitz on Star Eyes.musicxml
+0.8606393606393606,1.0183039183039184,"[5, 6, 7]",0.2128060263653484,"['durs', 'sharp_melodic_peaks', 'skips']",0.8,1,0.5,6.084722222222222,5.666666666666667,5,6,True,1,100000,Lee Konitz on Star Eyes.musicxml
+1.2692307692307692,1.3846153846153846,"[5, 6, 7]",0.06830601092896176,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.633333333333333,5.5,5,2,True,1,100000,1945 11 26 Koko Savoy Vol 1.mxl
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,nan,nan,5,0,True,1,100000,1945 11 26 Koko Savoy Vol 1.mxl
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,nan,nan,5,0,True,1,100000,1945 11 26 Koko take 1.mxl
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,nan,nan,5,0,True,1,100000,1945 11 26 Koko take 1.mxl
+1.2607392607392607,1.3063603063603062,"[5, 6, 7]",0.10952380952380952,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.455,5.6,5,5,True,1,100000,1945 11 26 Koko take 2.mxl
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,nan,nan,5,0,True,1,100000,1945 11 26 Koko take 2.mxl
+1.164169164169164,1.372072372072372,"[5, 6, 7]",0.23218997361477572,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.501683501683502,8.333333333333334,5,3,True,1,100000,1947 05 08 Donna Lee V.mxl
+0.5454545454545454,0.9090909090909091,"[5, 6, 7]",0.07651715039577836,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,5.8,5.0,5,1,True,1,100000,1947 05 08 Donna Lee V.mxl
+1.216117216117216,1.413919413919414,"[5, 6, 7]",0.2931937172774869,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.916666666666667,7.666666666666667,5,3,True,1,100000,1947 05 08 Donna Lee IV.mxl
+0.2857142857142857,0.8131868131868132,"[5, 6, 7]",0.13350785340314136,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,6.916666666666666,5.5,5,2,True,1,100000,1947 05 08 Donna Lee IV.mxl
+1.3156177156177158,1.415084915084915,"[5, 6, 7]",0.33152173913043476,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.363419913419913,6.5,5,6,True,1,100000,1947 05 08 Donna Lee III.mxl
+0.9090909090909091,0.9090909090909091,"[5, 6, 7]",0.07608695652173914,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,5.6,5.0,5,1,True,1,100000,1947 05 08 Donna Lee III.mxl
+1.3548118548118546,1.3827838827838825,"[5, 6, 7]",0.16759002770083103,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.523313492063492,9.0,5,4,True,1,100000,1953 02 22 fine And Dandy Washington YouTube.mxl
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,nan,nan,5,0,True,1,100000,1953 02 22 fine And Dandy Washington YouTube.mxl
+1.316017316017316,1.396825396825397,"[5, 6, 7]",0.2677966101694915,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.6190476190476195,10.666666666666666,5,3,True,1,100000,Parker on What is this thing called love (jam session).musicxml
+0.521978021978022,0.7637362637362638,"[5, 6, 7]",0.15932203389830507,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,6.908333333333333,5.75,5,4,True,1,100000,Parker on What is this thing called love (jam session).musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,nan,nan,5,0,True,1,100000,Lee Konitz - Subconscious-lee.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Lee Konitz - Subconscious-lee.musicxml
+1.3912087912087912,1.512087912087912,"[5, 6, 7]",0.1659513590844063,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.9416666666666655,6.0,5,5,True,1,100000,donna lee - konitz.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,nan,nan,5,0,True,1,100000,donna lee - konitz.musicxml
+1.3333333333333333,1.3846153846153846,"[5, 6, 7]",0.05531914893617021,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.5,6.0,5,1,True,1,100000,Konitz - Lennie-Bird.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Konitz - Lennie-Bird.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,nan,nan,5,0,True,1,100000,Lee Konitz on Marshmallow.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Lee Konitz on Marshmallow.musicxml
+0.9230769230769231,1.1428571428571428,"[5, 6, 7]",0.234375,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.8,5.0,5,2,True,1,100000,Lee Konitz on Sax of a Kind.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Lee Konitz on Sax of a Kind.musicxml
+1.3571428571428572,1.5,"[5, 6, 7]",0.09981167608286252,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.8,6.916666666666666,5.5,5,2,True,1,100000,Lee Konitz on Star Eyes.musicxml
+nan,nan,"[5, 6, 7]",0.0,"['durs', 'intervals_semitones', 'diatonic_int_size']",0.8,1,0.5,nan,nan,5,0,True,1,100000,Lee Konitz on Star Eyes.musicxml

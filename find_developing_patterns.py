@@ -263,7 +263,7 @@ def export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name):
                 note_records = ''
                 for k, idx in enumerate(seq):
 
-                    next_offset = flat_notes[idx + 1].offset - flat_notes[idx].offset if idx < len(flat_notes) else 1
+                    next_offset = flat_notes[idx + 1].offset - flat_notes[idx].offset if (idx + 2) < len(flat_notes) else 1000
                     rest_amt = next_offset - flat_notes[idx].duration.quarterLength
                     rest_string = f'+Rest{rest_amt}' if rest_amt > 0.01 else ''
                     try:
@@ -281,22 +281,22 @@ if __name__ == '__main__':
 
     xml_roots = [r'.\parker_transcriptions', r'.\konitz_transcriptions', r'.\other_transcriptions']
     fnames = [
-        # r'parker_transcriptions\1945 11 26 Koko Savoy Vol 1.mxl',
-        # r'parker_transcriptions\1945 11 26 Koko take 1.mxl',
-        # r'parker_transcriptions\1945 11 26 Koko take 2.mxl',
-        # r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
-        # r'parker_transcriptions\1947 05 08 Donna Lee IV.mxl',
-        # r'parker_transcriptions\1947 05 08 Donna Lee III.mxl',
-        # r'parker_transcriptions\1953 02 22 fine And Dandy Washington YouTube.mxl',
-        # r'parker_transcriptions\Parker on What is this thing called love (jam session).musicxml',
-        # r'konitz_transcriptions\Lee Konitz - Subconscious-lee.musicxml',
-        # r'konitz_transcriptions\donna lee - konitz.musicxml',
-        # r'konitz_transcriptions\Konitz - Lennie-Bird.musicxml',
-        # r'konitz_transcriptions\Lee Konitz on Marshmallow.musicxml',
-        # r'konitz_transcriptions\Lee Konitz on Sax of a Kind.musicxml',
-        # r'konitz_transcriptions\Lee Konitz on Star Eyes.musicxml'
-        r'konitz_transcriptions\all_konitz_solos.musicxml',
-        r'parker_transcriptions\all_parker_solos.musicxml'
+        r'parker_transcriptions\1945 11 26 Koko Savoy Vol 1.mxl',
+        r'parker_transcriptions\1945 11 26 Koko take 1.mxl',
+        r'parker_transcriptions\1945 11 26 Koko take 2.mxl',
+        r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
+        r'parker_transcriptions\1947 05 08 Donna Lee IV.mxl',
+        r'parker_transcriptions\1947 05 08 Donna Lee III.mxl',
+        r'parker_transcriptions\1953 02 22 fine And Dandy Washington YouTube.mxl',
+        r'parker_transcriptions\Parker on What is this thing called love (jam session).musicxml',
+        r'konitz_transcriptions\Lee Konitz - Subconscious-lee.musicxml',
+        r'konitz_transcriptions\donna lee - konitz.musicxml',
+        r'konitz_transcriptions\Konitz - Lennie-Bird.musicxml',
+        r'konitz_transcriptions\Lee Konitz on Marshmallow.musicxml',
+        r'konitz_transcriptions\Lee Konitz on Sax of a Kind.musicxml',
+        r'konitz_transcriptions\Lee Konitz on Star Eyes.musicxml'
+        # r'konitz_transcriptions\all_konitz_solos.musicxml',
+        # r'parker_transcriptions\all_parker_solos.musicxml'
         ]
     us = m21.environment.UserSettings()
 
@@ -338,7 +338,7 @@ if __name__ == '__main__':
     }
 
     # max_scores_to_try = [1/4, 1/3, 1/2, 3/4, 1]
-    max_scores_to_try = [0.8, 0.5, 0.25]
+    max_scores_to_try = [0.8, 0.5]
 
     results = []
 
