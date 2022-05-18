@@ -252,6 +252,7 @@ def export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name):
         flat_notes = list(mus_xml.flat.notes)
         flat_notes = [x for x in flat_notes if (not x.tie) or (x.tie.type == 'start')]
         flat_notes = [n for n in flat_notes if not type(n) is m21.harmony.ChordSymbol]
+        flat_notes = [n if not n.isChord else n.notes[-1] for n in flat_notes]
 
         with open(f"{fname} description.txt", "a") as f:
             f.write(f'Params: {str(params)} \n')
@@ -265,9 +266,11 @@ def export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name):
                     next_offset = flat_notes[idx + 1].offset - flat_notes[idx].offset if idx < len(flat_notes) else 1
                     rest_amt = next_offset - flat_notes[idx].duration.quarterLength
                     rest_string = f'+Rest{rest_amt}' if rest_amt > 0.01 else ''
-
-                    note_record = f'{flat_notes[idx].pitch.name}{flat_notes[idx].pitch.octave}-' \
-                                  f'{flat_notes[idx].duration.type}{rest_string} '
+                    try:
+                        note_record = f'{flat_notes[idx].pitch.name}{flat_notes[idx].pitch.octave}-' \
+                                    f'{flat_notes[idx].duration.type}{rest_string} '
+                    except AttributeError:
+                        note_record = 'ERR '
                     vps = str(vp_seq[idx]).replace('\'', r'').replace('),', ')')
                     seq_records = f'{seq_records} {vps}'
                     note_records += note_record
@@ -281,7 +284,7 @@ if __name__ == '__main__':
         # r'parker_transcriptions\1945 11 26 Koko Savoy Vol 1.mxl',
         # r'parker_transcriptions\1945 11 26 Koko take 1.mxl',
         # r'parker_transcriptions\1945 11 26 Koko take 2.mxl',
-        r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
+        # r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
         # r'parker_transcriptions\1947 05 08 Donna Lee IV.mxl',
         # r'parker_transcriptions\1947 05 08 Donna Lee III.mxl',
         # r'parker_transcriptions\1953 02 22 fine And Dandy Washington YouTube.mxl',
@@ -292,8 +295,8 @@ if __name__ == '__main__':
         # r'konitz_transcriptions\Lee Konitz on Marshmallow.musicxml',
         # r'konitz_transcriptions\Lee Konitz on Sax of a Kind.musicxml',
         # r'konitz_transcriptions\Lee Konitz on Star Eyes.musicxml'
-        # r'konitz_transcriptions\all_konitz_solos.musicxml',
-        # r'parker_transcriptions\all_parker_solos.musicxml'
+        r'konitz_transcriptions\all_konitz_solos.musicxml',
+        r'parker_transcriptions\all_parker_solos.musicxml'
         ]
     us = m21.environment.UserSettings()
 
@@ -304,11 +307,11 @@ if __name__ == '__main__':
         # ['durs', 'intervals_semitones'],
         # ['durs', 'rough_contour'],
         # ['durs', 'skips'],
-        ['durs', 'sharp_melodic_peaks'],
+        ['durs', 'sharp_melodic_peaks', 'skips'],
         # ['durs', 'diatonic_int_size'],
         # ['durs', 'pitches'],
         # ['durs', 'melodic_peaks'],
-        ['durs', 'interval_class'],
+        # ['durs', 'interval_class'],
         # ['durs', 'melodic_peaks', 'dur_contour'],
         # ['durs', 'rough_contour', 'interval_class'],
         # ['durs', 'rough_contour', 'intervals_semitones'],
@@ -317,7 +320,7 @@ if __name__ == '__main__':
         # ['pitches', 'interval_class'],
         # ['pitches', 'melodic_peaks'],
         # ['pitches', 'rough_contour'],
-        ['intervals_semitones', 'diatonic_int_size'],
+        ['durs', 'intervals_semitones', 'diatonic_int_size'],
         # ['intervals_semitones', 'melodic_peaks'],
         # ['intervals_semitones', 'rough_contour'],
     ]
@@ -325,17 +328,17 @@ if __name__ == '__main__':
     base_params = {
         'cardinalities': [5, 6, 7],
         'max_length_difference': 1,
-        'min_occurrences': 4,
+        'min_occurrences': 5,
         'score_prop_thresh': 1,
         'max_score': 0.5,
-        'markov_prob_thresh': 0.95,
-        'seq_compare_dist_threshold': 10000,
+        'markov_prob_thresh': 0.8,
+        'seq_compare_dist_threshold': 100000,
         'partial_matches': True,
         'keys': ['durs', 'melodic_peaks']
     }
 
     # max_scores_to_try = [1/4, 1/3, 1/2, 3/4, 1]
-    max_scores_to_try = [1]
+    max_scores_to_try = [0.8, 0.5, 0.25]
 
     results = []
 
