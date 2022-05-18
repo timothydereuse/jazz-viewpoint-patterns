@@ -104,15 +104,10 @@ def filter_neighborhoods(motif_inds, thresh, dist_matrix, sqs):
     return motif_labels
 
 
-def process_mus_xml(fname, markov, cardinalities=None, keys=None, 
+def process_mus_xml(mus_xml, markov, cardinalities=None, keys=None, 
     max_length_difference=2, min_occurrences=4, score_prop_thresh=1.0, max_score=2, partial_matches=True,
     markov_prob_thresh=0.6, seq_compare_dist_threshold=500, precomputed_pairs_output=None):
-    
-    tune_name = os.path.split(fname)[-1].split('.m')[0]
-    print(f'now processing {tune_name}')
 
-    print('pre-processing score...')
-    mus_xml = m21.converter.parse(fname)
     x = list(mus_xml.recurse().getElementsByClass('PageLayout'))
     mus_xml.remove(x, recurse=True)
     mus_xml_copy = gv.collapse_tied_notes(mus_xml)
@@ -279,22 +274,23 @@ if __name__ == '__main__':
         # r'konitz_transcriptions\Lee Konitz - Subconscious-lee.musicxml',
         # r'konitz_transcriptions\donna lee - konitz.musicxml',
         # r'konitz_transcriptions\Konitz - Lennie-Bird.musicxml',
-        r'konitz_transcriptions\Lee Konitz on Marshmallow.musicxml',
+        # r'konitz_transcriptions\Lee Konitz on Marshmallow.musicxml',
         # r'konitz_transcriptions\Lee Konitz on Sax of a Kind.musicxml',
         # r'konitz_transcriptions\Lee Konitz on Star Eyes.musicxml'
+        r'konitz_transcriptions\all_konitz_solos.musicxml'
         ]
     us = m21.environment.UserSettings()
 
     keysets = [
-        ['durs', 'melodic_peaks'],
+        # ['durs', 'melodic_peaks'],
         # ['durs', 'dur_contour'],
-        # ['durs', 'dur_contour', 'melodic_peaks'],
+        ['durs', 'dur_contour', 'rough_contour'],
         ['durs', 'intervals_semitones'],
-        ['durs', 'rough_contour'],
+        # ['durs', 'rough_contour'],
         # ['durs', 'skips'],
         # ['durs', 'sharp_melodic_peaks'],
         # ['durs', 'diatonic_int_size'],
-        # ['durs', 'pitches'],
+        ['durs', 'pitches'],
         # ['durs', 'melodic_peaks'],
         # ['durs', 'interval_class'],
         # ['durs', 'melodic_peaks', 'dur_contour'],
@@ -311,19 +307,19 @@ if __name__ == '__main__':
     ]
 
     base_params = {
-        'cardinalities': [5, 6, 7, 8],
-        'max_length_difference': 2,
+        'cardinalities': [5, 6, 7],
+        'max_length_difference': 1,
         'min_occurrences': 4,
         'score_prop_thresh': 1,
         'max_score': 0.5,
-        'markov_prob_thresh': 0.5,
+        'markov_prob_thresh': 0.95,
         'seq_compare_dist_threshold': 10000,
         'partial_matches': True,
         'keys': ['durs', 'melodic_peaks']
     }
 
     # max_scores_to_try = [1/4, 1/3, 1/2, 3/4, 1]
-    max_scores_to_try = [1/2, 3/4]
+    max_scores_to_try = [0.5, 0.75]
 
     results = []
 
@@ -340,8 +336,13 @@ if __name__ == '__main__':
 
             for max_score in max_scores_to_try:
                 params['max_score'] = max_score
+ 
+                tune_name = os.path.split(fname)[-1].split('.m')[0]
+                print(f'now processing {tune_name}')
 
-                motif_summary, vp_seq, mus_xml, opt = process_mus_xml(fname, markov, precomputed_pairs_output=reuse_output, **params)
+                mus_xml = m21.converter.parse(fname)
+
+                motif_summary, vp_seq, mus_xml, opt = process_mus_xml(mus_xml, markov, precomputed_pairs_output=reuse_output, **params)
                 reuse_output = opt
 
                 tune_name = fname.split('\\')[-1]
@@ -351,6 +352,10 @@ if __name__ == '__main__':
                     result[x] = params[x]
                 result['tune_name'] = tune_name
                 results.append(result)
+
+                export_name = f'score_{max_score}_{tune_name}'
+                export_motifs_to_pdf(motif_summary['motifs'], mus_xml, vp_seq, params, export_name)
+
 
     header = sorted(list(results[0].keys()))
     header.remove('motifs')
@@ -365,5 +370,4 @@ if __name__ == '__main__':
             entries = [result[x] for x in header]
             writer.writerow(entries)
 
-    # export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name)
     
