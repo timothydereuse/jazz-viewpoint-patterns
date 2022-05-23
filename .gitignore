@@ -3,6 +3,7 @@ exports/*
 *.pdf
 *.musx
 *.sib
+*.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
