@@ -7,7 +7,7 @@ from pathlib import Path
 
 import visualize_motifs as vm
 import generate_viewpoints as gv
-import pattern
+import old_methods.pattern as pattern
 from importlib import reload
 reload(vm)
 reload(gv)
