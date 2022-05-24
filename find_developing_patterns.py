@@ -11,20 +11,72 @@ from copy import copy
 import visualize_motifs as vm
 import generate_viewpoints as gv
 import markov_probs as mp
-import pattern
 from importlib import reload
 import csv
 reload(vm)
 reload(gv)
 reload(mp)
 reload(nw)
-reload(pattern)
 
-m21.environment.set('musescoreDirectPNGPath', r'C://Program Files//MuseScore 3//bin//MuseScore3.exe')
+results_fname = 'test_name'
+musescore_path = r'/Applications/MuseScore 3.3.app'
+m21.environment.set('musescoreDirectPNGPath', musescore_path)
+
+# parameters for NW-alignment
 match_weights = [0, -2]
 gap_penalties = [-2, -2, -1, -1]
 
+# score thresholds to try - determining minimum between two excerpts before they
+# can be considered part of the same motif. lower = more alike
+max_scores_to_try = [0.8, 0.5]
+
+# viewpoints on which to run pattern discovery for each file
+keysets = [
+    ['durs', 'dur_contour', 'rough_contour'],
+    ['durs', 'sharp_melodic_peaks', 'skips'],
+    ['durs', 'intervals_semitones', 'diatonic_int_size'],
+]
+
+
+# directories containing transcripts to use when determining log-likelihood
+# of occurrences; should ideally contain more than just the ones you're
+# running pattern discovery on
+xml_roots = [r'./Transcriptions/Parker', r'./Transcriptions/Konitz']
+
+# all files to run pattern discovery on
+fnames = [
+    r'./Transcriptions/Konitz/donna lee - konitz.musicxml',
+    # r'./Transcriptions/Konitz/Konitz - Lennie-Bird.musicxml',
+    # r'./Transcriptions/Konitz/Lee Konitz - Subconscious-lee.musicxml',
+    # r'./Transcriptions/Konitz/Lee Konitz on Marshmallow.musicxml',
+    # r'./Transcriptions/Konitz/Lee Konitz on Sax of a Kind.musicxml',
+    # r'./Transcriptions/Konitz/Lee Konitz on Star Eyes.musicxml',
+    # r'./Transcriptions/Parker/Parker on Star Eyes (verve rec).musicxml',
+    # r'./Transcriptions/Parker/Parker on What is this thing called love (jam session).musicxml'
+    ]
+
+base_params = {
+    'cardinalities': [8],
+    'max_length_difference': 1,
+    'min_occurrences': 5,
+    'score_prop_thresh': 1,
+    'max_score': 0.5,
+    'markov_prob_thresh': 0.8,
+    'seq_compare_dist_threshold': 100000,
+    'partial_matches': True,
+    'keys': ['durs', 'melodic_peaks']
+}
+
 def get_similarity(sequence_a, sequence_b, vp_seq, partial_matches=True):
+    '''
+    computes the similarity between two sequences of indexes (@sequence_a, @sequence_b)
+    which represent indices of the sequence @vp_seq, using the needleman-wunsch alignment
+    algorithm.
+
+    @partial_matches determines if two sequence elements can be partially similar:
+        e.g., the elements (3, 2, -2) and (3, 0, -2) would be counted as totally
+        dissimilar if partial_matches=False, and 66% similar if partial_matches=True
+    '''
     vp_size = len(vp_seq[0])
     a = [np.array(vp_seq[x]) for x in sequence_a]
     b = [np.array(vp_seq[x]) for x in sequence_b]
@@ -35,7 +87,17 @@ def get_similarity(sequence_a, sequence_b, vp_seq, partial_matches=True):
 
 
 def calculate_coverage(dist_matrix, sqs, thresh, min_coverage):
+    '''
+    Given a distance matrix @dist_matrix containing pairwise distances between all
+    possible excerpts of an input, find excerpts with high-coverage neighborhoods;
+    that is, excerpts whose immediately similar neighbors cover the most number
+    of notes in the piece.
 
+    @sqs is a list of sequences of indices that determine all possible excerpts
+    @thresh is the maximum distance for things to be considered in the same neighborhood
+    @min_coverage is the lowest coverage allowed for a motif to be considered
+    
+    '''
     disqualified = np.zeros(dist_matrix.shape[0])
     neighborhoods = (dist_matrix < thresh)
     coverage = np.zeros(dist_matrix.shape[0])
@@ -62,8 +124,14 @@ def calculate_coverage(dist_matrix, sqs, thresh, min_coverage):
 
 
 def filter_neighborhoods(motif_inds, thresh, dist_matrix, sqs):
-    # mark all sequences within thresh distance of discovered motifs
+    '''
+    Remove excerpts from the occurrences of a motif if they overlap
+    too much with other occurrences in the motif. This prevents a motif
+    from being found that mostly consists of overlapping excerpts
+    of a single phrase.
+    '''
 
+    # mark all sequences within thresh distance of discovered motifs
     print('marking and filtering crowded neighborhoods...')
     motif_labels = np.zeros(dist_matrix.shape[0], dtype=int) - 1
     for i, mi in enumerate(motif_inds):
@@ -107,29 +175,62 @@ def filter_neighborhoods(motif_inds, thresh, dist_matrix, sqs):
 def process_mus_xml(mus_xml, markov, cardinalities=None, keys=None, 
     max_length_difference=2, min_occurrences=4, score_prop_thresh=1.0, max_score=2, partial_matches=True,
     markov_prob_thresh=0.6, seq_compare_dist_threshold=500, precomputed_pairs_output=None):
+    '''
+    process a musicxml files (as a music21 stream) and find patterns in it.
 
+    @mus_xml: the music21 stream containing a monophonic melody in which to find patterns.
+    @markov: the dictionary created by get_markov_dict.
+    @cardinalities: a list containing the number of notes allowed in each excerpt
+        (e.g., [4, 5, 6, 7]) to search for motifs of between 4 and 7 notes
+    @keys: viewpoints along which to search for patterns (should be the same as the
+        keyset used to generate @markov)
+    @max_length_difference: maximum difference in length between two excerpts - if
+        two excerpts are more different in length than this number then they will
+        be considered maximally dissimilar by default
+    @min_occurrences: minimum number of occurrences in a motif
+    @score_prop_thresh: percentage in (0, 1] of pairwise comparisons to keep
+    @max_score: maximum score (distance) for two excerpts to be considered similar
+        (lower is more similar, 0 = exactly the same)
+    @partial_matching: determines whether or not sequence elements are allowed to be
+        considered partially similar if they match in some but not all viewpoints
+    @markov_prob_thresh: percentage in (0, 1] of excerpts to throw out based on
+        how common they are - can throw out more "boring" excerpts and focus only
+        on uncommon strings of notes
+    @seq_compare_dist_threshold: compare only excerpts that are this close together
+        in the piece. ignore those pairs that are separated by this much or more
+    @precomputed_pairs_output: can feed the output of a previous run back into
+        this argument to re-run a pattern discovery trial with different score
+        parameters, using the same computed similarity matrix. saves time.
+        might break.
+    '''
+
+
+    # remove all non-note elementss collapse ties 
     x = list(mus_xml.recurse().getElementsByClass('PageLayout'))
     mus_xml.remove(x, recurse=True)
     mus_xml_copy = gv.collapse_tied_notes(mus_xml)
 
+    # compute viewpoints on all notes in input
     feat_dict = gv.get_viewpoints(mus_xml_copy)
     vp_seq = gv.viewpoint_seq_from_dict(feat_dict, keys)
     num_events = len(vp_seq)
 
+    # get all subsequences (possible excerpts) and filter using heuristics
     sqs_unfiltered = gv.get_all_subsequences(num_events, cardinalities)
     sqs = gv.filter_subsequences(feat_dict, sqs_unfiltered, weak_start_end=True)
 
-    # calculating negative log likelihood of all subsequences...
+    # calculate negative log likelihood of all subsequences
     sqs_probs = np.zeros(len(sqs))
     for i, sq in enumerate(sqs):
         vps = [vp_seq[x] for x in sq]
         prob = mp.get_prob_of_sequence(vps, markov)
         sqs_probs[i] = prob
 
+    # remove sequences that are too common to be interesting, if markov_prob_thresh > 0
     prob_thresh = sorted(sqs_probs)[int((1 - markov_prob_thresh) * len(sqs_probs))]
     sqs = [sqs[i] for i in range(len(sqs)) if sqs_probs[i] > prob_thresh]
 
-    # make list of pairs of sequences that will be compared.
+    # make list of pairs of sequences that will be compared
     print('getting list of candidate pairs of sequences...')
     pairs_to_compare = []
     for i, sqa in enumerate(sqs):
@@ -147,7 +248,7 @@ def process_mus_xml(mus_xml, markov, cardinalities=None, keys=None,
                 continue
             pairs_to_compare.append((i, j + i))
 
-    # compute all similarity scores for selected pairs of sequences
+    # compute all similarity scores for pairs of sequences selected in the previous step
     print('computing similarity scores for all pairs of sequences...')
     dist_matrix = np.zeros((len(sqs), len(sqs))) + 10e5
     np.fill_diagonal(dist_matrix, 0)
@@ -171,7 +272,6 @@ def process_mus_xml(mus_xml, markov, cardinalities=None, keys=None,
         dist_matrix[sq_pair[1], sq_pair[0]] = output[n]
 
     # calculate coverage of neighborhood of every sequence
-    
     sort_scores = sorted(output)
     thresh = sort_scores[int(len(sort_scores) * score_prop_thresh) - 1] 
 
@@ -235,110 +335,9 @@ def process_mus_xml(mus_xml, markov, cardinalities=None, keys=None,
 
     return motif_summary_dict, vp_seq, mus_xml, output
 
-def export_motifs_to_pdf(motifs_to_export, mus_xml, vp_seq, params, tune_name):
-    keys_str = '-'.join(params['keys'])
-    folder_name = os.path.join('./exports', f'{keys_str} {tune_name}')
-    os.mkdir(folder_name)
-    for i, motif in enumerate(motifs_to_export):
-
-        viz_seqs = motif['note_inds']
-        occs = motif['num_occurrences']
-        score = motif['prob_score']
-        cardinality = np.round(motif['mean_cardinality'], 2)
-        fname = os.path.join(f'{folder_name}', f'{tune_name}-{i} freq-{occs} card-{cardinality}')
-        viz_score = vm.vis_developing_motif(viz_seqs, mus_xml)
-        viz_score.write('musicxml.pdf', fp=str(fname))
-
-        flat_notes = list(mus_xml.flat.notes)
-        flat_notes = [x for x in flat_notes if (not x.tie) or (x.tie.type == 'start')]
-        flat_notes = [n for n in flat_notes if not type(n) is m21.harmony.ChordSymbol]
-        flat_notes = [n if not n.isChord else n.notes[-1] for n in flat_notes]
-
-        with open(f"{fname} description.txt", "a") as f:
-            f.write(f'Params: {str(params)} \n')
-            f.write(f'Sequence score = {score:.3f}\n')
-            for j, seq in enumerate(viz_seqs):
-                f.write(f'Occurrence {j}: notes {str(seq)}\n')
-                seq_records = ''
-                note_records = ''
-                for k, idx in enumerate(seq):
-
-                    next_offset = flat_notes[idx + 1].offset - flat_notes[idx].offset if (idx + 2) < len(flat_notes) else 1000
-                    rest_amt = next_offset - flat_notes[idx].duration.quarterLength
-                    rest_string = f'+Rest{rest_amt}' if rest_amt > 0.01 else ''
-                    try:
-                        note_record = f'{flat_notes[idx].pitch.name}{flat_notes[idx].pitch.octave}-' \
-                                    f'{flat_notes[idx].duration.type}{rest_string} '
-                    except AttributeError:
-                        note_record = 'ERR '
-                    vps = str(vp_seq[idx]).replace('\'', r'').replace('),', ')')
-                    seq_records = f'{seq_records} {vps}'
-                    note_records += note_record
-                f.write(f'{seq_records}\n{note_records}\n\n')
-
 
 if __name__ == '__main__':
-
-    xml_roots = [r'.\parker_transcriptions', r'.\konitz_transcriptions', r'.\other_transcriptions']
-    fnames = [
-        r'parker_transcriptions\1945 11 26 Koko Savoy Vol 1.mxl',
-        r'parker_transcriptions\1945 11 26 Koko take 1.mxl',
-        r'parker_transcriptions\1945 11 26 Koko take 2.mxl',
-        r'parker_transcriptions\1947 05 08 Donna Lee V.mxl',
-        r'parker_transcriptions\1947 05 08 Donna Lee IV.mxl',
-        r'parker_transcriptions\1947 05 08 Donna Lee III.mxl',
-        r'parker_transcriptions\1953 02 22 fine And Dandy Washington YouTube.mxl',
-        r'parker_transcriptions\Parker on What is this thing called love (jam session).musicxml',
-        r'konitz_transcriptions\Lee Konitz - Subconscious-lee.musicxml',
-        r'konitz_transcriptions\donna lee - konitz.musicxml',
-        r'konitz_transcriptions\Konitz - Lennie-Bird.musicxml',
-        r'konitz_transcriptions\Lee Konitz on Marshmallow.musicxml',
-        r'konitz_transcriptions\Lee Konitz on Sax of a Kind.musicxml',
-        r'konitz_transcriptions\Lee Konitz on Star Eyes.musicxml'
-        # r'konitz_transcriptions\all_konitz_solos.musicxml',
-        # r'parker_transcriptions\all_parker_solos.musicxml'
-        ]
     us = m21.environment.UserSettings()
-
-    keysets = [
-        # ['durs', 'melodic_peaks'],
-        # ['durs', 'dur_contour'],
-        ['durs', 'dur_contour', 'rough_contour'],
-        # ['durs', 'intervals_semitones'],
-        # ['durs', 'rough_contour'],
-        # ['durs', 'skips'],
-        ['durs', 'sharp_melodic_peaks', 'skips'],
-        # ['durs', 'diatonic_int_size'],
-        # ['durs', 'pitches'],
-        # ['durs', 'melodic_peaks'],
-        # ['durs', 'interval_class'],
-        # ['durs', 'melodic_peaks', 'dur_contour'],
-        # ['durs', 'rough_contour', 'interval_class'],
-        # ['durs', 'rough_contour', 'intervals_semitones'],
-        # ['durs', 'rough_contour', 'diatonic_int_size'],
-        # ['durs', 'rough_contour', 'pitches'],
-        # ['pitches', 'interval_class'],
-        # ['pitches', 'melodic_peaks'],
-        # ['pitches', 'rough_contour'],
-        ['durs', 'intervals_semitones', 'diatonic_int_size'],
-        # ['intervals_semitones', 'melodic_peaks'],
-        # ['intervals_semitones', 'rough_contour'],
-    ]
-
-    base_params = {
-        'cardinalities': [5, 6, 7],
-        'max_length_difference': 1,
-        'min_occurrences': 5,
-        'score_prop_thresh': 1,
-        'max_score': 0.5,
-        'markov_prob_thresh': 0.8,
-        'seq_compare_dist_threshold': 100000,
-        'partial_matches': True,
-        'keys': ['durs', 'melodic_peaks']
-    }
-
-    # max_scores_to_try = [1/4, 1/3, 1/2, 3/4, 1]
-    max_scores_to_try = [0.8, 0.5]
 
     results = []
 
@@ -364,8 +363,6 @@ if __name__ == '__main__':
                 motif_summary, vp_seq, mus_xml, opt = process_mus_xml(mus_xml, markov, precomputed_pairs_output=reuse_output, **params)
                 reuse_output = opt
 
-                tune_name = fname.split('\\')[-1]
-
                 result = copy(motif_summary)
                 for x in params.keys():
                     result[x] = params[x]
@@ -373,11 +370,13 @@ if __name__ == '__main__':
                 results.append(result)
 
                 export_name = f'score_{max_score}_{tune_name}'
-                export_motifs_to_pdf(motif_summary['motifs'], mus_xml, vp_seq, params, export_name)
+                vm.export_motifs_to_pdf(motif_summary['motifs'], mus_xml, vp_seq, params, export_name)
 
 
     header = sorted(list(results[0].keys()))
     header.remove('motifs')
+
+    csv_name = f'exports/{results_fname}_results_summary.csv'
 
     with open('results.csv', 'w', newline='') as f:
         # create the csv writer
