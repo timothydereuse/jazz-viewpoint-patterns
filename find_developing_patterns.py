@@ -19,7 +19,7 @@ reload(mp)
 reload(nw)
 
 results_fname = 'test_name'
-musescore_path = r'/Applications/MuseScore 3.3.app'
+musescore_path = r'/Applications/MuseScore 3.app'
 m21.environment.set('musescoreDirectPNGPath', musescore_path)
 
 # parameters for NW-alignment
@@ -46,13 +46,13 @@ xml_roots = [r'./Transcriptions/Parker', r'./Transcriptions/Konitz']
 # all files to run pattern discovery on
 fnames = [
     r'./Transcriptions/Konitz/donna lee - konitz.musicxml',
-    # r'./Transcriptions/Konitz/Konitz - Lennie-Bird.musicxml',
-    # r'./Transcriptions/Konitz/Lee Konitz - Subconscious-lee.musicxml',
-    # r'./Transcriptions/Konitz/Lee Konitz on Marshmallow.musicxml',
-    # r'./Transcriptions/Konitz/Lee Konitz on Sax of a Kind.musicxml',
-    # r'./Transcriptions/Konitz/Lee Konitz on Star Eyes.musicxml',
-    # r'./Transcriptions/Parker/Parker on Star Eyes (verve rec).musicxml',
-    # r'./Transcriptions/Parker/Parker on What is this thing called love (jam session).musicxml'
+    r'./Transcriptions/Konitz/Konitz - Lennie-Bird.musicxml',
+    r'./Transcriptions/Konitz/Lee Konitz - Subconscious-lee.musicxml',
+    r'./Transcriptions/Konitz/Lee Konitz on Marshmallow.musicxml',
+    r'./Transcriptions/Konitz/Lee Konitz on Sax of a Kind.musicxml',
+    r'./Transcriptions/Konitz/Lee Konitz on Star Eyes.musicxml',
+    r'./Transcriptions/Parker/Parker on Star Eyes (verve rec).musicxml',
+    r'./Transcriptions/Parker/Parker on What is this thing called love (jam session).musicxml'
     ]
 
 base_params = {
