@@ -1,7 +1,6 @@
 exports/*
 *.zip
-*.pdf
-*.musx
+./Exports/*
 *.sib
 *.DS_Store
 
